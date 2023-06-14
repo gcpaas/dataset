@@ -18,8 +18,8 @@
     <description>数据集</description>
 
     <modules>
-        <module>gc-starter-dataset-common</module>
-        <module>gc-starter-dataset-core</module>
+        <module>common</module>
+        <module>core</module>
     </modules>
 
 
