@@ -299,7 +299,7 @@ public class DBUtils {
     /**
      * sq语句中参数变量赋值
      */
-    private static String parameterReplace(DatasetParamDTO param, String sql) {
+    public static String parameterReplace(DatasetParamDTO param, String sql) {
         if (DatasetConstant.SqlParamsType.STRING.equals(param.getType()) || DatasetConstant.SqlParamsType.DATE.equals(param.getType())) {
             if (param.getValue().contains(",")) {
                 sql = sql.replaceAll("\\$\\{" + param.getName() + "\\}", param.getValue());

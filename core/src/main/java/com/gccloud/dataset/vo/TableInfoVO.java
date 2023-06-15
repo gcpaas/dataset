@@ -4,6 +4,7 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 /**
+ * 数据库表/视图信息
  * @author hongyang
  * @version 1.0
  * @date 2023/6/6 14:42

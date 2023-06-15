@@ -17,8 +17,8 @@ import lombok.ToString;
 @Data
 public class CategoryEntity extends SuperEntity {
 
-    @ApiModelProperty(value = "主键")
-    private String id;
+    @ApiModelProperty(value = "id序列")
+    private String ids;
 
     @ApiModelProperty(value = "种类树名称")
     private String name;

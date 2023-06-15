@@ -7,12 +7,15 @@ import com.gccloud.common.vo.PageVO;
 import com.gccloud.dataset.dto.DatasetParamDTO;
 import com.gccloud.dataset.dto.DatasetSearchDTO;
 import com.gccloud.dataset.entity.DatasetEntity;
-import com.gccloud.dataset.entity.config.*;
+import com.gccloud.dataset.entity.config.BaseDataSetConfig;
 import com.gccloud.dataset.vo.DatasetInfoVO;
+import com.github.benmanes.caffeine.cache.AsyncCache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author hongyang
@@ -20,6 +23,10 @@ import java.util.Map;
  * @date 2023/6/1 10:56
  */
 public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
+
+    AsyncCache<String, Object> DATASET_CACHE = Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).buildAsync();
+
+
 
     /**
      * 列表查询
@@ -32,6 +39,7 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
         queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getTypeId()), DatasetEntity::getTypeId, searchDTO.getTypeId());
         queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getDatasetType()), DatasetEntity::getDatasetType, searchDTO.getDatasetType());
         queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getModuleCode()), DatasetEntity::getModuleCode, searchDTO.getModuleCode());
+        queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getSourceId()), DatasetEntity::getSourceId, searchDTO.getSourceId());
         queryWrapper.orderByDesc(DatasetEntity::getUpdateDate);
         return this.list(queryWrapper);
     }
@@ -47,6 +55,7 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
         queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getTypeId()), DatasetEntity::getTypeId, searchDTO.getTypeId());
         queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getDatasetType()), DatasetEntity::getDatasetType, searchDTO.getDatasetType());
         queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getModuleCode()), DatasetEntity::getModuleCode, searchDTO.getModuleCode());
+        queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getSourceId()), DatasetEntity::getSourceId, searchDTO.getSourceId());
         queryWrapper.orderByDesc(DatasetEntity::getUpdateDate);
         return this.page(searchDTO, queryWrapper);
     }

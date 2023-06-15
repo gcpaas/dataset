@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
+ * 种类树VO
  * @author pan.shun
  * @since 2021/9/7 10:58
  */

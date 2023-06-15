@@ -2,10 +2,15 @@ package com.gccloud.dataset.controller;
 
 import com.gccloud.common.vo.PageVO;
 import com.gccloud.common.vo.R;
+import com.gccloud.dataset.constant.DatasetConstant;
+import com.gccloud.dataset.dto.DatasetSearchDTO;
 import com.gccloud.dataset.dto.DatasourceSearchDTO;
+import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.DatasourceEntity;
+import com.gccloud.dataset.entity.config.OriginalDataSetConfig;
 import com.gccloud.dataset.service.IBaseDatasourceService;
 import com.gccloud.dataset.service.factory.DatasourceServiceFactory;
+import com.gccloud.dataset.service.impl.dataset.BaseDatasetServiceImpl;
 import com.gccloud.dataset.service.impl.datasource.BaseDatasourceServiceImpl;
 import com.gccloud.dataset.vo.FieldInfoVO;
 import com.gccloud.dataset.vo.TableInfoVO;
@@ -16,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author hongyang
@@ -32,6 +38,10 @@ public class DatasourceController {
 
     @Resource
     private DatasourceServiceFactory datasourceServiceFactory;
+
+    @Resource
+    private BaseDatasetServiceImpl datasetService;
+
 
     @ApiOperation("分页列表")
     @GetMapping("/page")
@@ -96,6 +106,19 @@ public class DatasourceController {
         }
         IBaseDatasourceService datasourceService = datasourceServiceFactory.build(datasourceEntity.getSourceType());
         List<TableInfoVO> tableList = datasourceService.getTableList(datasourceEntity);
+        DatasetSearchDTO searchDTO = new DatasetSearchDTO();
+        searchDTO.setDatasetType(DatasetConstant.DataSetType.ORIGINAL);
+        searchDTO.setSourceId(sourceId);
+        List<DatasetEntity> originalList = datasetService.getList(searchDTO);
+        List<String> tableNameList = originalList.stream().map((dataset) -> {
+            OriginalDataSetConfig config = (OriginalDataSetConfig) dataset.getConfig();
+            return config.getTableName();
+        }).collect(Collectors.toList());
+        tableList.forEach((table) -> {
+            if (tableNameList.contains(table.getName())) {
+                table.setStatus(1);
+            }
+        });
         return R.success(tableList);
     }
 
@@ -109,6 +132,19 @@ public class DatasourceController {
         }
         IBaseDatasourceService datasourceService = datasourceServiceFactory.build(datasourceEntity.getSourceType());
         List<TableInfoVO> viewList = datasourceService.getViewList(datasourceEntity);
+        DatasetSearchDTO searchDTO = new DatasetSearchDTO();
+        searchDTO.setDatasetType(DatasetConstant.DataSetType.ORIGINAL);
+        searchDTO.setSourceId(sourceId);
+        List<DatasetEntity> originalList = datasetService.getList(searchDTO);
+        List<String> tableNameList = originalList.stream().map((dataset) -> {
+            OriginalDataSetConfig config = (OriginalDataSetConfig) dataset.getConfig();
+            return config.getTableName();
+        }).collect(Collectors.toList());
+        viewList.forEach((view) -> {
+            if (tableNameList.contains(view.getName())) {
+                view.setStatus(1);
+            }
+        });
         return R.success(viewList);
     }
 

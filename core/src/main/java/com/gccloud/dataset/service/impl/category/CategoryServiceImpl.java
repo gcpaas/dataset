@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author hongyang
@@ -28,6 +30,12 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
      * 顶级父节点id
      */
     private static final String SUPER_PARENT_ID = "0";
+
+    /**
+     * id序列分隔符
+     */
+    private static final String ID_SPLIT = ",";
+
 
     @Resource
     private ITreeService treeService;
@@ -45,6 +53,18 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
     }
 
     @Override
+    public List<String> getAllChildrenId(String id) {
+        CategoryEntity category = this.getById(id);
+        String ids = category.getIds() + ID_SPLIT;
+        LambdaQueryWrapper<CategoryEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.select(CategoryEntity::getId);
+        wrapper.likeRight(CategoryEntity::getIds, ids);
+        List<CategoryEntity> list = this.list(wrapper);
+        return list.stream().map(CategoryEntity::getId).collect(Collectors.toList());
+    }
+
+
+    @Override
     public String add(CategoryEntity entity) {
         boolean repeat = this.checkNameRepeat(entity.getName(), entity.getId(), entity.getModuleCode());
         if (repeat) {
@@ -54,6 +74,14 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
             entity.setParentId(SUPER_PARENT_ID);
         }
         this.save(entity);
+        if (!Objects.equals(entity.getParentId(), SUPER_PARENT_ID)) {
+            CategoryEntity parent = this.getById(entity.getParentId());
+            if (parent == null) {
+                throw new GlobalException("父节点不存在");
+            }
+            entity.setIds(parent.getIds() + ID_SPLIT + entity.getId());
+            this.updateById(entity);
+        }
         return entity.getId();
     }
 

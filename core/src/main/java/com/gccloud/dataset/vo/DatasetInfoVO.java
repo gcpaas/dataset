@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * 数据集信息VO
  * @author hongyang
  * @version 1.0
  * @date 2023/6/7 13:44
@@ -39,7 +40,7 @@ public class DatasetInfoVO {
     @ApiModelProperty(value = "是否可编辑，0 不可编辑 1 可编辑")
     private Integer editable;
 
-    @ApiModelProperty(value = "数据集字段信息")
+    @ApiModelProperty(value = "数据集字段信息，可选key参考本类中的常量，其中必须包含FIELD_NAME、FIELD_DESC")
     private List<Map<String, Object>> fields;
 
     @ApiModelProperty(value = "参数配置信息")

@@ -24,6 +24,13 @@ public interface ICategoryService extends ISuperService<CategoryEntity> {
 
 
     /**
+     * 获取节点的所有子节点id，包括子节点的子节点的...
+     * @param id
+     * @return
+     */
+    List<String> getAllChildrenId(String id);
+
+    /**
      * 新增
      * @param entity
      * @return
