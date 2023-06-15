@@ -1,6 +1,5 @@
 package com.gccloud.dataset.vo;
 
-import com.gccloud.common.vo.PageVO;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
@@ -16,13 +15,18 @@ import java.util.Map;
 @Data
 public class DataVO {
 
-    @ApiModelProperty(value = "列表数据，不分页时使用")
-    private List<Map<String, Object>> data;
+    @ApiModelProperty(value = "数据集执行结果数据")
+    private Object data;
 
-    @ApiModelProperty(value = "分页数据，分页时使用")
-    private PageVO<Map<String, Object>> pageData;
-
-    @ApiModelProperty(value = "结构，非必须")
+    @ApiModelProperty(value = "数据集执行结果的数据结构，非必须")
     private List<Map<String, Object>> structure;
+
+    public DataVO() {
+    }
+
+    public DataVO(Object data, List<Map<String, Object>> structure) {
+        this.data = data;
+        this.structure = structure;
+    }
 
 }

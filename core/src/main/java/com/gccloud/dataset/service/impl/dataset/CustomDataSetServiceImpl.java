@@ -6,6 +6,7 @@ import com.gccloud.common.vo.PageVO;
 import com.gccloud.dataset.constant.DatasetConstant;
 import com.gccloud.dataset.dao.DatasetDao;
 import com.gccloud.dataset.dto.DatasetParamDTO;
+import com.gccloud.dataset.dto.TestExecuteDTO;
 import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.DatasourceEntity;
 import com.gccloud.dataset.entity.config.CustomDataSetConfig;
@@ -44,16 +45,14 @@ public class CustomDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
 
 
     @Override
-    public PageVO getPageData(String sql, String dataSourceId, String id, List<DatasetParamDTO> params, int current, int size) {
-        if (StringUtils.isBlank(sql) && StringUtils.isBlank(id)) {
-            throw new GlobalException("sql和数据集id不能同时为空");
+    public PageVO execute(String id, List<DatasetParamDTO> params, int current, int size) {
+        if (StringUtils.isBlank(id)) {
+            throw new GlobalException("数据集id不能为空");
         }
-        if (StringUtils.isBlank(sql)) {
-            DatasetEntity entity = this.getById(id);
-            CustomDataSetConfig config = (CustomDataSetConfig) entity.getConfig();
-            sql = config.getSqlProcess();
-            dataSourceId = entity.getSourceId();
-        }
+        DatasetEntity entity = this.getById(id);
+        CustomDataSetConfig config = (CustomDataSetConfig) entity.getConfig();
+        String sql = config.getSqlProcess();
+        String dataSourceId = entity.getSourceId();
         // 参数预处理
         params = paramsClient.handleParams(params);
         // 参数替换
@@ -61,21 +60,19 @@ public class CustomDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
         DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
         DataVO dataVO = buildService.executeSqlPage(datasource, sql, current, size);
-        return dataVO.getPageData();
+        return (PageVO) dataVO.getData();
     }
 
+
     @Override
-    public Object getData(String sql, String dataSourceId, String id, List<DatasetParamDTO> params) {
-        if (StringUtils.isBlank(sql) && StringUtils.isBlank(id)) {
-            throw new GlobalException("sql和数据集id不能同时为空");
+    public Object execute(String id, List<DatasetParamDTO> params) {
+        if (StringUtils.isBlank(id)) {
+            throw new GlobalException("数据集id不能为空");
         }
-        if (StringUtils.isBlank(sql)) {
-            DatasetEntity entity = this.getById(id);
-            CustomDataSetConfig config = (CustomDataSetConfig) entity.getConfig();
-            sql = config.getSqlProcess();
-            dataSourceId = entity.getSourceId();
-        }
-        // 参数预处理
+        DatasetEntity entity = this.getById(id);
+        CustomDataSetConfig config = (CustomDataSetConfig) entity.getConfig();
+        String sql = config.getSqlProcess();
+        String dataSourceId = entity.getSourceId();
         params = paramsClient.handleParams(params);
         // 参数替换
         sql = DBUtils.updateParamsConfig(sql, params);
@@ -86,24 +83,24 @@ public class CustomDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
     }
 
     @Override
-    public List<Map<String, Object>> getStructure(String sql, String dataSourceId, String id, List<DatasetParamDTO> params) {
-        if (StringUtils.isBlank(sql) && StringUtils.isBlank(id)) {
-            throw new GlobalException("sql和数据集id不能同时为空");
-        }
-        if (StringUtils.isBlank(sql)) {
-            DatasetEntity entity = this.getById(id);
-            CustomDataSetConfig config = (CustomDataSetConfig) entity.getConfig();
-            sql = config.getSqlProcess();
-            dataSourceId = entity.getSourceId();
-        }
+    public DataVO execute(TestExecuteDTO executeDTO) {
+        List<DatasetParamDTO> params = executeDTO.getParams();
         // 参数预处理
         params = paramsClient.handleParams(params);
+        String sql = executeDTO.getScript();
         // 参数替换
         sql = DBUtils.updateParamsConfig(sql, params);
-        DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);
+        DatasourceEntity datasource = datasourceService.getInfoById(executeDTO.getDataSourceId());
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
-        // 主要目的是获取结构，所以只查询一条数据
-        DataVO dataVO = buildService.executeSqlPage(datasource, sql, 1, 1);
-        return dataVO.getStructure();
+        DataVO dataVO;
+        Integer current = executeDTO.getCurrent();
+        Integer size = executeDTO.getSize();
+        if (size != null && current != null) {
+            dataVO = buildService.executeSqlPage(datasource, sql, current, size);
+        } else {
+            dataVO = buildService.executeSql(datasource, sql);
+        }
+        return dataVO;
     }
+
 }

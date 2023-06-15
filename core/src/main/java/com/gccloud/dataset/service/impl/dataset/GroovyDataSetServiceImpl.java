@@ -6,10 +6,12 @@ import com.gccloud.common.utils.GroovyUtils;
 import com.gccloud.dataset.constant.DatasetConstant;
 import com.gccloud.dataset.dao.DatasetDao;
 import com.gccloud.dataset.dto.DatasetParamDTO;
+import com.gccloud.dataset.dto.TestExecuteDTO;
 import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.config.GroovyDataSetConfig;
 import com.gccloud.dataset.params.ParamsClient;
 import com.gccloud.dataset.service.IBaseDataSetService;
+import com.gccloud.dataset.vo.DataVO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -34,20 +36,46 @@ public class GroovyDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
 
 
     @Override
-    public Object getData(String script, String dataSourceId, String id, List<DatasetParamDTO> params) {
-        if (StringUtils.isBlank(script) && StringUtils.isBlank(id)) {
-            throw new GlobalException("脚本和数据集id不能同时为空");
+    public Object execute(String id, List<DatasetParamDTO> params) {
+        if (StringUtils.isBlank(id)) {
+            throw new GlobalException("数据集id不能为空");
         }
-        if (StringUtils.isBlank(script)) {
-            DatasetEntity datasetEntity = this.getById(id);
-            if (datasetEntity == null) {
-                throw new GlobalException("数据集不存在");
-            }
-            GroovyDataSetConfig config = (GroovyDataSetConfig) datasetEntity.getConfig();
-            script = config.getScript();
+        DatasetEntity datasetEntity = this.getById(id);
+        if (datasetEntity == null) {
+            throw new GlobalException("数据集不存在");
         }
+        GroovyDataSetConfig config = (GroovyDataSetConfig) datasetEntity.getConfig();
+        String script = config.getScript();
         // 参数预处理
         params = paramsClient.handleParams(params);
+        Map<String, Object> paramMap = this.buildParams(params, script);
+        return GroovyUtils.run(script, paramMap);
+    }
+
+
+    @Override
+    public DataVO execute(TestExecuteDTO executeDTO) {
+        String script = executeDTO.getScript();
+        if (StringUtils.isBlank(script)) {
+            throw new GlobalException("脚本不能为空");
+        }
+        List<DatasetParamDTO> params = executeDTO.getParams();
+        // 参数预处理
+        params = paramsClient.handleParams(params);
+        Map<String, Object> paramMap = this.buildParams(params, script);
+        DataVO dataVO = new DataVO();
+        dataVO.setData(GroovyUtils.run(script, paramMap));
+        return dataVO;
+    }
+
+
+    /**
+     * 构建参数，并且编译脚本
+     * @param params
+     * @param script
+     * @return
+     */
+    private Map<String, Object> buildParams(List<DatasetParamDTO> params, String script) {
         Map<String, Object> paramMap = new HashMap<>(16);
         if (!CollectionUtils.isEmpty(params)) {
             params.forEach(p -> paramMap.put(p.getName(), p.getValue()));
@@ -56,7 +84,6 @@ public class GroovyDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
         if (clazz == null) {
             throw new GlobalException("脚本编译异常");
         }
-        return GroovyUtils.run(script, paramMap);
+        return paramMap;
     }
-
 }

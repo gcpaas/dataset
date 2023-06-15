@@ -6,6 +6,7 @@ import com.gccloud.common.vo.PageVO;
 import com.gccloud.dataset.constant.DatasetConstant;
 import com.gccloud.dataset.dao.DatasetDao;
 import com.gccloud.dataset.dto.DatasetParamDTO;
+import com.gccloud.dataset.dto.TestExecuteDTO;
 import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.DatasourceEntity;
 import com.gccloud.dataset.entity.config.StoredProcedureDataSetConfig;
@@ -44,43 +45,39 @@ public class StoredProcedureDataSetServiceImpl extends ServiceImpl<DatasetDao, D
 
 
     @Override
-    public PageVO getPageData(String sqlProcess, String dataSourceId, String id, List<DatasetParamDTO> params, int current, int size) {
-        if (StringUtils.isBlank(sqlProcess) && StringUtils.isBlank(id)) {
-            throw new GlobalException("sql和数据集id不能同时为空");
+    public PageVO execute(String id, List<DatasetParamDTO> params, int current, int size) {
+        if (StringUtils.isBlank(id)) {
+            throw new GlobalException("数据集id不能为空");
         }
-        if (StringUtils.isBlank(sqlProcess)) {
-            DatasetEntity dataset = this.getById(id);
-            StoredProcedureDataSetConfig config = (StoredProcedureDataSetConfig) dataset.getConfig();
-            // 存储过程
-            sqlProcess = config.getSqlProcess();
-        }
+        DatasetEntity dataset = this.getById(id);
+        StoredProcedureDataSetConfig config = (StoredProcedureDataSetConfig) dataset.getConfig();
+        // 存储过程
+        String sqlProcess = config.getSqlProcess();
         // 参数预处理
         params = paramsClient.handleParams(params);
         // 参数替换
         sqlProcess = DBUtils.updateParamsConfig(sqlProcess, params);
-        DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);
+        DatasourceEntity datasource = datasourceService.getInfoById(config.getSourceId());
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
         // 执行存储过程
         DataVO dataVO = buildService.executeProcedure(datasource, sqlProcess, current, size);
-        return dataVO.getPageData();
+        return (PageVO) dataVO.getData();
     }
 
     @Override
-    public Object getData(String sqlProcess, String dataSourceId, String id, List<DatasetParamDTO> params) {
-        if (StringUtils.isBlank(sqlProcess) && StringUtils.isBlank(id)) {
-            throw new GlobalException("sql和数据集id不能同时为空");
+    public Object execute(String id, List<DatasetParamDTO> params) {
+        if (StringUtils.isBlank(id)) {
+            throw new GlobalException("数据集id不能为空");
         }
-        if (StringUtils.isBlank(sqlProcess)) {
-            DatasetEntity dataset = this.getById(id);
-            StoredProcedureDataSetConfig config = (StoredProcedureDataSetConfig) dataset.getConfig();
-            // 存储过程
-            sqlProcess = config.getSqlProcess();
-        }
+        DatasetEntity dataset = this.getById(id);
+        StoredProcedureDataSetConfig config = (StoredProcedureDataSetConfig) dataset.getConfig();
+        // 存储过程
+        String sqlProcess = config.getSqlProcess();
         // 参数预处理
         params = paramsClient.handleParams(params);
         // 参数替换
         sqlProcess = DBUtils.updateParamsConfig(sqlProcess, params);
-        DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);
+        DatasourceEntity datasource = datasourceService.getInfoById(config.getSourceId());
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
         // 执行存储过程
         DataVO dataVO = buildService.executeProcedure(datasource, sqlProcess, null, null);
@@ -88,24 +85,28 @@ public class StoredProcedureDataSetServiceImpl extends ServiceImpl<DatasetDao, D
     }
 
     @Override
-    public List<Map<String, Object>> getStructure(String sqlProcess, String dataSourceId, String id, List<DatasetParamDTO> params) {
-        if (StringUtils.isBlank(sqlProcess) && StringUtils.isBlank(id)) {
-            throw new GlobalException("sql和数据集id不能同时为空");
-        }
+    public DataVO execute(TestExecuteDTO executeDTO) {
+        String sqlProcess = executeDTO.getScript();
         if (StringUtils.isBlank(sqlProcess)) {
-            DatasetEntity dataset = this.getById(id);
-            StoredProcedureDataSetConfig config = (StoredProcedureDataSetConfig) dataset.getConfig();
-            // 存储过程
-            sqlProcess = config.getSqlProcess();
+            throw new GlobalException("存储过程执行语句不能为空");
         }
+        List<DatasetParamDTO> params = executeDTO.getParams();
         // 参数预处理
         params = paramsClient.handleParams(params);
         // 参数替换
         sqlProcess = DBUtils.updateParamsConfig(sqlProcess, params);
-        DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);
+        DatasourceEntity datasource = datasourceService.getInfoById(executeDTO.getDataSourceId());
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
-        // 执行存储过程
-        DataVO dataVO = buildService.executeProcedure(datasource, sqlProcess, 1, 1);
-        return dataVO.getStructure();
+        DataVO dataVO;
+        Integer current = executeDTO.getCurrent();
+        Integer size = executeDTO.getSize();
+        if (current != null && size != null) {
+            // 执行存储过程
+            dataVO = buildService.executeProcedure(datasource, sqlProcess, current, size);
+        } else {
+            // 执行存储过程
+            dataVO = buildService.executeProcedure(datasource, sqlProcess, null, null);
+        }
+        return dataVO;
     }
 }

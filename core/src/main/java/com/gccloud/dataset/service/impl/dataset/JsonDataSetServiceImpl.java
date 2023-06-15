@@ -6,9 +6,11 @@ import com.gccloud.common.utils.JSON;
 import com.gccloud.dataset.constant.DatasetConstant;
 import com.gccloud.dataset.dao.DatasetDao;
 import com.gccloud.dataset.dto.DatasetParamDTO;
+import com.gccloud.dataset.dto.TestExecuteDTO;
 import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.config.JsonDataSetConfig;
 import com.gccloud.dataset.service.IBaseDataSetService;
+import com.gccloud.dataset.vo.DataVO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
@@ -27,18 +29,16 @@ import java.util.List;
 public class JsonDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntity> implements IBaseDataSetService {
 
     @Override
-    public Object getData(String json, String dataSourceId, String id, List<DatasetParamDTO> params) {
-        if (StringUtils.isBlank(json) && StringUtils.isBlank(id)) {
-            throw new GlobalException("json和数据集id不能同时为空");
+    public Object execute(String id, List<DatasetParamDTO> params) {
+        if (StringUtils.isBlank(id)) {
+            throw new GlobalException("数据集id不能为空");
         }
         DatasetEntity datasetEntity = this.getById(id);
         if (datasetEntity == null) {
             throw new GlobalException("数据集不存在");
         }
         JsonDataSetConfig config = (JsonDataSetConfig) datasetEntity.getConfig();
-        if (StringUtils.isBlank(json)) {
-            json = config.getJson();
-        }
+        String json = config.getJson();
         Object object = null;
         // json可能为数组，也可能为对象
         if (json.startsWith("[")) {
@@ -52,4 +52,25 @@ public class JsonDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
         return object;
     }
 
+
+    @Override
+    public DataVO execute(TestExecuteDTO executeDTO) {
+        String json = executeDTO.getScript();
+        if (StringUtils.isBlank(json)) {
+            throw new GlobalException("json不能为空");
+        }
+        Object object = null;
+        // json可能为数组，也可能为对象
+        if (json.startsWith("[")) {
+            object = JSON.parseArray(json);
+        } else {
+            object = JSON.parseObject(json);
+        }
+        if (object == null) {
+            throw new GlobalException("json格式错误");
+        }
+        DataVO dataVO = new DataVO();
+        dataVO.setData(object);
+        return dataVO;
+    }
 }

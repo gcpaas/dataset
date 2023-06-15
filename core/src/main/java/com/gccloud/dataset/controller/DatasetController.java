@@ -4,6 +4,7 @@ import com.gccloud.common.vo.PageVO;
 import com.gccloud.common.vo.R;
 import com.gccloud.dataset.dto.DatasetSearchDTO;
 import com.gccloud.dataset.dto.ExecuteDTO;
+import com.gccloud.dataset.dto.TestExecuteDTO;
 import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.DatasourceEntity;
 import com.gccloud.dataset.service.IBaseDataSetService;
@@ -11,6 +12,7 @@ import com.gccloud.dataset.service.factory.DataSetServiceFactory;
 import com.gccloud.dataset.service.impl.dataset.BaseDatasetServiceImpl;
 import com.gccloud.dataset.service.impl.datasource.BaseDatasourceServiceImpl;
 import com.gccloud.dataset.utils.DBUtils;
+import com.gccloud.dataset.vo.DataVO;
 import com.gccloud.dataset.vo.DatasetInfoVO;
 import com.google.common.collect.Maps;
 import io.swagger.annotations.Api;
@@ -99,11 +101,32 @@ public class DatasetController {
         return R.success(nameRepeat);
     }
 
+    @ApiOperation("数据集执行测试")
+    @PostMapping("/execute/test")
+    public R<Object> execute(@RequestBody TestExecuteDTO executeDTO) {
+        if (StringUtils.isBlank(executeDTO.getDataSetType())) {
+            return R.error("数据集类型不能为空");
+        }
+        // 获取对应的数据集服务
+        IBaseDataSetService dataSetService = dataSetServiceFactory.build(executeDTO.getDataSetType());
+        DataVO execute = dataSetService.execute(executeDTO);
+        Map<String, Object> result = Maps.newHashMap();
+        result.put("data", execute.getData());
+        result.put("structure", execute.getStructure());
+        if (StringUtils.isNotBlank(executeDTO.getDataSourceId())) {
+            DatasourceEntity datasource = datasourceService.getInfoById(executeDTO.getDataSourceId());
+            List<String> tableNameList = DBUtils.getTableNames(DBUtils.updateParamsConfig(executeDTO.getScript(), executeDTO.getParams()), datasource.getSourceType());
+            result.put("tableNameList", tableNameList);
+        }
+        return R.success(result);
+    }
+
+
     @ApiOperation("数据集执行")
     @PostMapping("/execute")
     public R<Object> execute(@RequestBody ExecuteDTO executeDTO) {
         if (StringUtils.isBlank(executeDTO.getDataSetType()) && StringUtils.isBlank(executeDTO.getDataSetId())) {
-            return R.error("数据集类型和数据集id不能同时为空");
+            return R.error("数据集id不能为空");
         }
         // 获取对应的数据集服务
         IBaseDataSetService dataSetService;
@@ -115,19 +138,12 @@ public class DatasetController {
         boolean executionNeeded = dataSetService.checkBackendExecutionNeeded(executeDTO.getDataSetId());
         Object data;
         if (executeDTO.getCurrent() != null && executeDTO.getSize() != null) {
-            data = dataSetService.getPageData(executeDTO.getScript(), executeDTO.getDataSourceId(), executeDTO.getDataSetId(), executeDTO.getParams(), executeDTO.getCurrent(), executeDTO.getSize());
+            data = dataSetService.execute(executeDTO.getDataSetId(), executeDTO.getParams(), executeDTO.getCurrent(), executeDTO.getSize());
         } else {
-            data = dataSetService.getData(executeDTO.getScript(), executeDTO.getDataSourceId(), executeDTO.getDataSetId(), executeDTO.getParams());
+            data = dataSetService.execute(executeDTO.getDataSetId(), executeDTO.getParams());
         }
-        List<Map<String, Object>> structure = dataSetService.getStructure(executeDTO.getScript(), executeDTO.getDataSourceId(), executeDTO.getDataSetId(), executeDTO.getParams());
         Map<String, Object> result = Maps.newHashMap();
         result.put("data", data);
-        result.put("structure", structure);
-        if (StringUtils.isNotBlank(executeDTO.getDataSourceId())) {
-            DatasourceEntity datasource = datasourceService.getInfoById(executeDTO.getDataSourceId());
-            List<String> tableNameList = DBUtils.getTableNames(DBUtils.updateParamsConfig(executeDTO.getScript(), executeDTO.getParams()), datasource.getSourceType());
-            result.put("tableNameList", tableNameList);
-        }
         // 是否需要由前端执行
         result.put("executionByFrontend", !executionNeeded);
         return R.success(result);

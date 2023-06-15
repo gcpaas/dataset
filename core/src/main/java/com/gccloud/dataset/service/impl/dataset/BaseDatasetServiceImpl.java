@@ -7,11 +7,13 @@ import com.gccloud.dataset.constant.DatasetConstant;
 import com.gccloud.dataset.dao.DatasetDao;
 import com.gccloud.dataset.dto.DatasetParamDTO;
 import com.gccloud.dataset.dto.DatasetSearchDTO;
+import com.gccloud.dataset.dto.TestExecuteDTO;
 import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.config.BaseDataSetConfig;
 import com.gccloud.dataset.entity.config.OriginalDataSetConfig;
 import com.gccloud.dataset.service.IBaseDataSetService;
 import com.gccloud.dataset.service.ICategoryService;
+import com.gccloud.dataset.vo.DataVO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -33,11 +35,23 @@ public class BaseDatasetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
     private ICategoryService categoryService;
 
     @Override
-    public Object getData(String sql, String datasourceId, String id, List<DatasetParamDTO> params) {
+    public Object execute(String id, List<DatasetParamDTO> params) {
         log.error("请通过DataSetServiceFactory获取对应的数据集服务实现类来调用该方法");
         return null;
     }
 
+    @Override
+    public DataVO execute(TestExecuteDTO executeDTO) {
+        log.error("请通过DataSetServiceFactory获取对应的数据集服务实现类来调用该方法");
+        return null;
+    }
+
+    /**
+     * 根据数据源id和表名获取数据集列表
+     * @param tableName
+     * @param sourceId
+     * @return
+     */
     public List<DatasetEntity> getListByTableName(String tableName, String sourceId) {
         LambdaQueryWrapper<DatasetEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(DatasetEntity::getDatasetType, DatasetConstant.DataSetType.ORIGINAL);
@@ -61,24 +75,13 @@ public class BaseDatasetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
         return list;
     }
 
-
-
-    @Override
-    public List<DatasetEntity> getList(DatasetSearchDTO searchDTO) {
-        return this.list(this.getQueryWrapper(searchDTO));
-    }
-
-    @Override
-    public PageVO<DatasetEntity> getPage(DatasetSearchDTO searchDTO) {
-        return this.page(searchDTO, this.getQueryWrapper(searchDTO));
-    }
-
     /**
      * 组装查询条件
      * @param searchDTO
      * @return
      */
-    private LambdaQueryWrapper<DatasetEntity> getQueryWrapper(DatasetSearchDTO searchDTO) {
+    @Override
+    public LambdaQueryWrapper<DatasetEntity> getQueryWrapper(DatasetSearchDTO searchDTO) {
         LambdaQueryWrapper<DatasetEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.like(StringUtils.isNotBlank(searchDTO.getName()), DatasetEntity::getName, searchDTO.getName());
         if (StringUtils.isNotBlank(searchDTO.getTypeId())) {

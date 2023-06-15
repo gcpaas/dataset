@@ -11,7 +11,7 @@ import com.gccloud.common.vo.PageVO;
 import com.gccloud.dataset.constant.DatasetConstant;
 import com.gccloud.dataset.dto.DatasetParamDTO;
 import com.gccloud.dataset.entity.DatasourceEntity;
-import com.gccloud.dataset.vo.DataVO;
+import com.gccloud.dataset.vo.DbDataVO;
 import com.gccloud.dataset.vo.DatasetInfoVO;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
@@ -42,13 +42,13 @@ public class DBUtils {
      * @param size
      * @return
      */
-    public static DataVO call(String procedure, DatasourceEntity datasource, Integer current, Integer size) {
+    public static DbDataVO call(String procedure, DatasourceEntity datasource, Integer current, Integer size) {
         Connection connection = getConnection(datasource);
         if (connection == null) {
             throw new GlobalException("数据源连接建立失败");
         }
         // 数据集
-        DataVO dataVO = new DataVO();
+        DbDataVO dataVO = new DbDataVO();
         List<Map<String, Object>> data = Lists.newArrayList();
         List<Map<String, Object>> structure = Lists.newArrayList();
         dataVO.setData(data);
@@ -152,13 +152,13 @@ public class DBUtils {
      * @param datasource
      * @return
      */
-    public static DataVO getSqlValue(String sql, DatasourceEntity datasource) {
+    public static DbDataVO getSqlValue(String sql, DatasourceEntity datasource) {
         Connection connection = getConnection(datasource);
         if (connection == null) {
             throw new GlobalException("数据源连接建立失败");
         }
         // 数据集
-        DataVO dataVO = new DataVO();
+        DbDataVO dataVO = new DbDataVO();
         List<Map<String, Object>> data = Lists.newArrayList();
         List<Map<String, Object>> structure = Lists.newArrayList();
         dataVO.setData(data);

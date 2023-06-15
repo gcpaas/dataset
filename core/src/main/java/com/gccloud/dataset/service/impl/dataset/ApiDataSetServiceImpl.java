@@ -8,10 +8,12 @@ import com.gccloud.common.utils.JSON;
 import com.gccloud.dataset.constant.DatasetConstant;
 import com.gccloud.dataset.dao.DatasetDao;
 import com.gccloud.dataset.dto.DatasetParamDTO;
+import com.gccloud.dataset.dto.TestExecuteDTO;
 import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.config.ApiDataSetConfig;
 import com.gccloud.dataset.params.ParamsClient;
 import com.gccloud.dataset.service.IBaseDataSetService;
+import com.gccloud.dataset.vo.DataVO;
 import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Response;
@@ -39,20 +41,15 @@ public class ApiDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntity
 
 
     @Override
-    public Object getData(String apiInfoJson, String dataSourceId, String id, List<DatasetParamDTO> paramList) {
-        if (StringUtils.isBlank(apiInfoJson) && StringUtils.isBlank(id)) {
-            throw new GlobalException("apiInfoJson和id不能同时为空");
+    public Object execute(String id, List<DatasetParamDTO> paramList) {
+        if (StringUtils.isBlank(id)) {
+            throw new GlobalException("数据集id不能为空");
         }
-        ApiDataSetConfig config;
-        if (StringUtils.isBlank(apiInfoJson)) {
-            DatasetEntity entity = this.getById(id);
-            if (entity == null) {
-                throw new GlobalException("数据集不存在");
-            }
-            config = (ApiDataSetConfig) entity.getConfig();
-        } else {
-            config = JSON.parseObject(apiInfoJson, ApiDataSetConfig.class);
+        DatasetEntity entity = this.getById(id);
+        if (entity == null) {
+            throw new GlobalException("数据集不存在");
         }
+        ApiDataSetConfig config = (ApiDataSetConfig) entity.getConfig();
         paramList = paramsClient.handleParams(paramList);
         config = this.handleParams(config, paramList);
         if (config.getRequestType().equals("frontend")) {
@@ -61,6 +58,25 @@ public class ApiDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntity
         return this.getBackendData(config);
     }
 
+
+    @Override
+    public DataVO execute(TestExecuteDTO executeDTO) {
+        String apiInfoJson = executeDTO.getScript();
+        if (StringUtils.isBlank(apiInfoJson)) {
+            throw new GlobalException("数据集测试数据不能为空");
+        }
+        ApiDataSetConfig config = JSON.parseObject(apiInfoJson, ApiDataSetConfig.class);
+        List<DatasetParamDTO> paramList = executeDTO.getParams();
+        paramList = paramsClient.handleParams(paramList);
+        config = this.handleParams(config, paramList);
+        DataVO dataVO = new DataVO();
+        if (config.getRequestType().equals("frontend")) {
+            dataVO.setData(config);
+        }
+        Object data = this.getBackendData(config);
+        dataVO.setData(data);
+        return dataVO;
+    }
 
     /**
      * 由前端执行请求，这里只需替换参数信息

@@ -6,8 +6,10 @@ import com.gccloud.common.utils.BeanConvertUtils;
 import com.gccloud.common.vo.PageVO;
 import com.gccloud.dataset.dto.DatasetParamDTO;
 import com.gccloud.dataset.dto.DatasetSearchDTO;
+import com.gccloud.dataset.dto.TestExecuteDTO;
 import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.config.BaseDataSetConfig;
+import com.gccloud.dataset.vo.DataVO;
 import com.gccloud.dataset.vo.DatasetInfoVO;
 import com.github.benmanes.caffeine.cache.AsyncCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -34,14 +36,7 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
      * @return
      */
     default List<DatasetEntity> getList(DatasetSearchDTO searchDTO) {
-        LambdaQueryWrapper<DatasetEntity> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.like(StringUtils.isNotBlank(searchDTO.getName()), DatasetEntity::getName, searchDTO.getName());
-        queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getTypeId()), DatasetEntity::getTypeId, searchDTO.getTypeId());
-        queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getDatasetType()), DatasetEntity::getDatasetType, searchDTO.getDatasetType());
-        queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getModuleCode()), DatasetEntity::getModuleCode, searchDTO.getModuleCode());
-        queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getSourceId()), DatasetEntity::getSourceId, searchDTO.getSourceId());
-        queryWrapper.orderByDesc(DatasetEntity::getUpdateDate);
-        return this.list(queryWrapper);
+        return this.list(this.getQueryWrapper(searchDTO));
     }
 
     /**
@@ -50,6 +45,10 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
      * @return
      */
     default PageVO<DatasetEntity> getPage(DatasetSearchDTO searchDTO) {
+        return this.page(searchDTO, this.getQueryWrapper(searchDTO));
+    }
+
+    default LambdaQueryWrapper<DatasetEntity> getQueryWrapper(DatasetSearchDTO searchDTO) {
         LambdaQueryWrapper<DatasetEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.like(StringUtils.isNotBlank(searchDTO.getName()), DatasetEntity::getName, searchDTO.getName());
         queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getTypeId()), DatasetEntity::getTypeId, searchDTO.getTypeId());
@@ -57,7 +56,7 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
         queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getModuleCode()), DatasetEntity::getModuleCode, searchDTO.getModuleCode());
         queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getSourceId()), DatasetEntity::getSourceId, searchDTO.getSourceId());
         queryWrapper.orderByDesc(DatasetEntity::getUpdateDate);
-        return this.page(searchDTO, queryWrapper);
+        return queryWrapper;
     }
 
     /**
@@ -132,41 +131,33 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
 
     /**
      * 获取分页数据（数据集执行）
-     * 当script不为空时，执行script，否则根据id执行数据集配置
-     * @param script 不同的数据集类型，传的值不同，如：sql、存储过程、脚本
      * @param id
-     * @param dataSourceId
      * @param params
      * @param current
      * @param size
      * @return
      */
-    default PageVO<Object> getPageData(String script, String dataSourceId, String id, List<DatasetParamDTO> params, int current, int size) {
+    default PageVO<Object> execute(String id, List<DatasetParamDTO> params, int current, int size) {
         return null;
     }
 
 
     /**
      * 获取数据（数据集执行）
-     * 当script不为空时，执行script，否则根据id执行数据集配置
-     * @param script
-     * @param id
-     * @param dataSourceId
+     * @param datasetId
      * @param params
      * @return
      */
-    Object getData(String script, String dataSourceId, String id, List<DatasetParamDTO> params);
+    Object execute(String datasetId, List<DatasetParamDTO> params);
 
 
     /**
-     * 获取数据结构
-     * @param script
-     * @param id
-     * @param dataSourceId
-     * @param params
+     * 数据集执行测试
+     * 在数据集新增、更新前需要先通过测试，确保数据集可用
+     * @param executeDTO
      * @return
      */
-    default List<Map<String, Object>> getStructure(String script, String dataSourceId, String id, List<DatasetParamDTO> params) {
+    default DataVO execute(TestExecuteDTO executeDTO) {
         return null;
     }
 

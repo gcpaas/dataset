@@ -6,6 +6,7 @@ import com.gccloud.common.vo.PageVO;
 import com.gccloud.dataset.constant.DatasetConstant;
 import com.gccloud.dataset.dao.DatasetDao;
 import com.gccloud.dataset.dto.DatasetParamDTO;
+import com.gccloud.dataset.dto.TestExecuteDTO;
 import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.DatasourceEntity;
 import com.gccloud.dataset.entity.config.OriginalDataSetConfig;
@@ -39,47 +40,43 @@ public class OriginalDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetE
     private BaseDatasourceServiceImpl datasourceService;
 
     @Override
-    public PageVO getPageData(String sql, String dataSourceId, String id, List<DatasetParamDTO> params, int current, int size) {
-        if (StringUtils.isBlank(sql) && StringUtils.isBlank(id)) {
-            throw new GlobalException("sql和数据集id不能同时为空");
+    public PageVO execute(String id, List<DatasetParamDTO> params, int current, int size) {
+        if (StringUtils.isBlank(id)) {
+            throw new GlobalException("数据集id不能为空");
         }
-        if (StringUtils.isBlank(sql)) {
-            DatasetEntity entity = this.getById(id);
-            OriginalDataSetConfig config = (OriginalDataSetConfig) entity.getConfig();
-            String fieldInfo = config.getFieldInfo();
-            if (StringUtils.isBlank(fieldInfo)) {
-                fieldInfo = "*";
-            }
-            if (DatasetConstant.DataRepeat.NOT_REPEAT.equals(config.getRepeatStatus())) {
-                fieldInfo = "DISTINCT " + fieldInfo;
-            }
-            sql = "SELECT " + fieldInfo + " FROM " + config.getTableName();
-            dataSourceId = config.getSourceId();
+        DatasetEntity entity = this.getById(id);
+        OriginalDataSetConfig config = (OriginalDataSetConfig) entity.getConfig();
+        String fieldInfo = config.getFieldInfo();
+        if (StringUtils.isBlank(fieldInfo)) {
+            fieldInfo = "*";
         }
+        if (DatasetConstant.DataRepeat.NOT_REPEAT.equals(config.getRepeatStatus())) {
+            fieldInfo = "DISTINCT " + fieldInfo;
+        }
+        String sql = "SELECT " + fieldInfo + " FROM " + config.getTableName();
+        String dataSourceId = config.getSourceId();
         DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
         DataVO dataVO = buildService.executeSqlPage(datasource, sql, current, size);
-        return dataVO.getPageData();
+        return (PageVO) dataVO.getData();
     }
 
     @Override
-    public Object getData(String sql, String dataSourceId, String id, List<DatasetParamDTO> params) {
-        if (StringUtils.isBlank(sql) && StringUtils.isBlank(id)) {
-            throw new GlobalException("sql和数据集id不能同时为空");
+    public Object execute(String id, List<DatasetParamDTO> params) {
+        if (StringUtils.isBlank(id)) {
+            throw new GlobalException("数据集id不能为空");
         }
-        if (StringUtils.isBlank(sql)) {
-            DatasetEntity entity = this.getById(id);
-            OriginalDataSetConfig config = (OriginalDataSetConfig) entity.getConfig();
-            String fieldInfo = config.getFieldInfo();
-            if (StringUtils.isBlank(fieldInfo)) {
-                fieldInfo = "*";
-            }
-            if (DatasetConstant.DataRepeat.NOT_REPEAT.equals(config.getRepeatStatus())) {
-                fieldInfo = "DISTINCT " + fieldInfo;
-            }
-            sql = "SELECT " + fieldInfo + " FROM " + config.getTableName();
-            dataSourceId = config.getSourceId();
+        DatasetEntity entity = this.getById(id);
+        OriginalDataSetConfig config = (OriginalDataSetConfig) entity.getConfig();
+        String fieldInfo = config.getFieldInfo();
+        if (StringUtils.isBlank(fieldInfo)) {
+            fieldInfo = "*";
         }
+        if (DatasetConstant.DataRepeat.NOT_REPEAT.equals(config.getRepeatStatus())) {
+            fieldInfo = "DISTINCT " + fieldInfo;
+        }
+        String sql = "SELECT " + fieldInfo + " FROM " + config.getTableName();
+        String dataSourceId = config.getSourceId();
         DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
         DataVO dataVO = buildService.executeSql(datasource, sql);
@@ -87,27 +84,21 @@ public class OriginalDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetE
     }
 
     @Override
-    public List<Map<String, Object>> getStructure(String sql, String dataSourceId, String id, List<DatasetParamDTO> params) {
-        if (StringUtils.isBlank(sql) && StringUtils.isBlank(id)) {
-            throw new GlobalException("sql和数据集id不能同时为空");
-        }
+    public DataVO execute(TestExecuteDTO executeDTO) {
+        String sql = executeDTO.getScript();
         if (StringUtils.isBlank(sql)) {
-            DatasetEntity entity = this.getById(id);
-            OriginalDataSetConfig config = (OriginalDataSetConfig) entity.getConfig();
-            String fieldInfo = config.getFieldInfo();
-            if (StringUtils.isBlank(fieldInfo)) {
-                fieldInfo = "*";
-            }
-            if (DatasetConstant.DataRepeat.NOT_REPEAT.equals(config.getRepeatStatus())) {
-                fieldInfo = "DISTINCT " + fieldInfo;
-            }
-            sql = "SELECT " + fieldInfo + " FROM " + config.getTableName();
-            dataSourceId = config.getSourceId();
+            throw new GlobalException("sql不能为空");
         }
-        DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);
+        DatasourceEntity datasource = datasourceService.getInfoById(executeDTO.getDataSourceId());
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
-        // 主要目的是获取结构，所以只查询一条数据
-        DataVO dataVO = buildService.executeSqlPage(datasource, sql, 1, 1);
-        return dataVO.getStructure();
+        DataVO dataVO;
+        Integer current = executeDTO.getCurrent();
+        Integer size = executeDTO.getSize();
+        if (size != null && current != null) {
+            dataVO = buildService.executeSqlPage(datasource, sql, current, size);
+        } else {
+            dataVO = buildService.executeSql(datasource, sql);
+        }
+        return dataVO;
     }
 }

@@ -9,6 +9,7 @@ import com.gccloud.dataset.entity.DatasourceEntity;
 import com.gccloud.dataset.service.IBaseDatasourceService;
 import com.gccloud.dataset.utils.DBUtils;
 import com.gccloud.dataset.vo.DataVO;
+import com.gccloud.dataset.vo.DbDataVO;
 import com.gccloud.dataset.vo.FieldInfoVO;
 import com.gccloud.dataset.vo.TableInfoVO;
 import com.google.common.collect.Lists;
@@ -33,7 +34,11 @@ public class ClickhouseDatasourceServiceImpl extends ServiceImpl<DatasourceDao, 
 
     @Override
     public DataVO executeSql(DatasourceEntity datasource, String sql) {
-        return DBUtils.getSqlValue(sql, datasource);
+        DbDataVO dbDataVO = DBUtils.getSqlValue(sql, datasource);
+        DataVO dataVO = new DataVO();
+        dataVO.setData(dbDataVO.getData());
+        dataVO.setStructure(dbDataVO.getStructure());
+        return dataVO;
     }
 
     @Override
@@ -44,29 +49,30 @@ public class ClickhouseDatasourceServiceImpl extends ServiceImpl<DatasourceDao, 
         // 组装计算总条数的sql
         String countSql = "SELECT COUNT(1) AS COUNT FROM (" + sql + ") AS t";
         log.info("数据集数据详情计算总条数 sql语句：{}", countSql);
-        DataVO countData = DBUtils.getSqlValue(countSql, datasource);
+        DbDataVO countData = DBUtils.getSqlValue(countSql, datasource);
         Object count = countData.getData().get(0).get("COUNT");
         int total = Integer.parseInt(count.toString());
         // 组装分页sql
         int start = (current - 1) * size;
         String pageSql = "SELECT * FROM (" + sql + ") AS t LIMIT " + start + "," + size;
         log.info("数据集数据详情分页 sql语句：{}", pageSql);
-        DataVO pageData = DBUtils.getSqlValue(pageSql, datasource);
+        DbDataVO pageData = DBUtils.getSqlValue(pageSql, datasource);
         PageVO<Map<String, Object>> page = new PageVO<>();
         page.setCurrent(current);
         page.setSize(size);
         page.setTotalCount(total);
         page.setTotalPage((total + size - 1) / size);
         page.setList(pageData.getData());
-        pageData.setPageData(page);
-        pageData.setData(null);
-        return pageData;
+        DataVO dataVO = new DataVO();
+        dataVO.setData(pageData);
+        dataVO.setStructure(pageData.getStructure());
+        return dataVO;
     }
 
     @Override
     public List<TableInfoVO> getTableList(DatasourceEntity datasource) {
         String sql = "show tables";
-        DataVO dataVO = DBUtils.getSqlValue(sql, datasource);
+        DbDataVO dataVO = DBUtils.getSqlValue(sql, datasource);
         List<Map<String, Object>> data = dataVO.getData();
         List<TableInfoVO> tableList = Lists.newArrayList();
         if (data == null || data.size() == 0) {
@@ -127,7 +133,7 @@ public class ClickhouseDatasourceServiceImpl extends ServiceImpl<DatasourceDao, 
     @Override
     public List<TableInfoVO> getViewList(DatasourceEntity datasource) {
         String sql = "SELECT name FROM system.tables where engine='View'";
-        DataVO dataVO = DBUtils.getSqlValue(sql, datasource);
+        DbDataVO dataVO = DBUtils.getSqlValue(sql, datasource);
         List<Map<String, Object>> data = dataVO.getData();
         List<TableInfoVO> tableList = Lists.newArrayList();
         if (data == null || data.size() == 0) {
