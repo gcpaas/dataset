@@ -134,6 +134,12 @@
             <artifactId>groovy-sandbox</artifactId>
             <version>1.19</version>
         </dependency>
+        <!--  http工具  -->
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>4.8.0</version>
+        </dependency>
     </dependencies>
 
 

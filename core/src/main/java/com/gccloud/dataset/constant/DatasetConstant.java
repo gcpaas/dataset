@@ -33,6 +33,11 @@ public interface DatasetConstant {
          * JS数据集
          */
         String JS = "js";
+
+        /**
+         * API数据集
+         */
+        String API = "api";
     }
 
     interface DatasourceType {
