@@ -52,11 +52,11 @@ public class CustomDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
         DatasetEntity entity = this.getById(id);
         CustomDataSetConfig config = (CustomDataSetConfig) entity.getConfig();
         String sql = config.getSqlProcess();
-        String dataSourceId = entity.getSourceId();
         // 参数预处理
         params = paramsClient.handleParams(params);
         // 参数替换
         sql = DBUtils.updateParamsConfig(sql, params);
+        String dataSourceId = entity.getSourceId();
         DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
         DataVO dataVO = buildService.executeSqlPage(datasource, sql, current, size);
@@ -69,17 +69,20 @@ public class CustomDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
         if (StringUtils.isBlank(id)) {
             throw new GlobalException("数据集id不能为空");
         }
-        DatasetEntity entity = this.getById(id);
-        CustomDataSetConfig config = (CustomDataSetConfig) entity.getConfig();
-        String sql = config.getSqlProcess();
-        String dataSourceId = entity.getSourceId();
-        params = paramsClient.handleParams(params);
-        // 参数替换
-        sql = DBUtils.updateParamsConfig(sql, params);
-        DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);
-        IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
-        DataVO dataVO = buildService.executeSql(datasource, sql);
-        return dataVO.getData();
+        final List<DatasetParamDTO> finalParams = params;
+        return DATASET_CACHE.get(id, key -> {
+            DatasetEntity entity = this.getById(id);
+            CustomDataSetConfig config = (CustomDataSetConfig) entity.getConfig();
+            String sql = config.getSqlProcess();
+            String dataSourceId = entity.getSourceId();
+            List<DatasetParamDTO> paramList = paramsClient.handleParams(finalParams);
+            // 参数替换
+            sql = DBUtils.updateParamsConfig(sql, paramList);
+            DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);
+            IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
+            DataVO dataVO = buildService.executeSql(datasource, sql);
+            return dataVO.getData();
+        });
     }
 
     @Override

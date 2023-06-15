@@ -66,21 +66,24 @@ public class OriginalDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetE
         if (StringUtils.isBlank(id)) {
             throw new GlobalException("数据集id不能为空");
         }
-        DatasetEntity entity = this.getById(id);
-        OriginalDataSetConfig config = (OriginalDataSetConfig) entity.getConfig();
-        String fieldInfo = config.getFieldInfo();
-        if (StringUtils.isBlank(fieldInfo)) {
-            fieldInfo = "*";
-        }
-        if (DatasetConstant.DataRepeat.NOT_REPEAT.equals(config.getRepeatStatus())) {
-            fieldInfo = "DISTINCT " + fieldInfo;
-        }
-        String sql = "SELECT " + fieldInfo + " FROM " + config.getTableName();
-        String dataSourceId = config.getSourceId();
-        DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);
-        IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
-        DataVO dataVO = buildService.executeSql(datasource, sql);
-        return dataVO.getData();
+        return DATASET_CACHE.get(id, key -> {
+            DatasetEntity entity = this.getById(id);
+            OriginalDataSetConfig config = (OriginalDataSetConfig) entity.getConfig();
+            String fieldInfo = config.getFieldInfo();
+            if (StringUtils.isBlank(fieldInfo)) {
+                fieldInfo = "*";
+            }
+            if (DatasetConstant.DataRepeat.NOT_REPEAT.equals(config.getRepeatStatus())) {
+                fieldInfo = "DISTINCT " + fieldInfo;
+            }
+            String sql = "SELECT " + fieldInfo + " FROM " + config.getTableName();
+            String dataSourceId = config.getSourceId();
+            DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);
+            IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
+            DataVO dataVO = buildService.executeSql(datasource, sql);
+            return dataVO.getData();
+        });
+
     }
 
     @Override

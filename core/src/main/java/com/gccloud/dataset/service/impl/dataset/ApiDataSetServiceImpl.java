@@ -14,6 +14,7 @@ import com.gccloud.dataset.entity.config.ApiDataSetConfig;
 import com.gccloud.dataset.params.ParamsClient;
 import com.gccloud.dataset.service.IBaseDataSetService;
 import com.gccloud.dataset.vo.DataVO;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.Response;
@@ -45,18 +46,23 @@ public class ApiDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntity
         if (StringUtils.isBlank(id)) {
             throw new GlobalException("数据集id不能为空");
         }
-        DatasetEntity entity = this.getById(id);
-        if (entity == null) {
-            throw new GlobalException("数据集不存在");
-        }
-        ApiDataSetConfig config = (ApiDataSetConfig) entity.getConfig();
-        paramList = paramsClient.handleParams(paramList);
-        config = this.handleParams(config, paramList);
-        if (config.getRequestType().equals("frontend")) {
-            return config;
-        }
-        return this.getBackendData(config);
+        final List<DatasetParamDTO> finalParamList = Lists.newArrayList(paramList);
+        return DATASET_CACHE.get(id, key -> {
+            DatasetEntity entity = this.getById(id);
+            if (entity == null) {
+                throw new GlobalException("数据集不存在");
+            }
+            ApiDataSetConfig config = (ApiDataSetConfig) entity.getConfig();
+            List<DatasetParamDTO> params = paramsClient.handleParams(finalParamList);
+            config = this.handleParams(config, params);
+            if (config.getRequestType().equals("frontend")) {
+                return config;
+            }
+            return this.getBackendData(config);
+        });
+
     }
+
 
 
     @Override

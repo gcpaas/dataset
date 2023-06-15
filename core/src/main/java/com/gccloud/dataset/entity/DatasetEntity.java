@@ -43,9 +43,6 @@ public class DatasetEntity extends SuperEntity {
     @ApiModelProperty(value = "唯一编码")
     private String code;
 
-    @ApiModelProperty("缓存时间, 单位分钟, 0 表示不缓存")
-    private Integer cacheTime;
-
     @ApiModelProperty(value = "具体数据集配置")
     @TableField(typeHandler = BaseDataSetConfigTypeHandler.class)
     private BaseDataSetConfig config;

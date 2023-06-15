@@ -40,16 +40,20 @@ public class GroovyDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
         if (StringUtils.isBlank(id)) {
             throw new GlobalException("数据集id不能为空");
         }
-        DatasetEntity datasetEntity = this.getById(id);
-        if (datasetEntity == null) {
-            throw new GlobalException("数据集不存在");
-        }
-        GroovyDataSetConfig config = (GroovyDataSetConfig) datasetEntity.getConfig();
-        String script = config.getScript();
-        // 参数预处理
-        params = paramsClient.handleParams(params);
-        Map<String, Object> paramMap = this.buildParams(params, script);
-        return GroovyUtils.run(script, paramMap);
+        final List<DatasetParamDTO> finalParams = params;
+        return DATASET_CACHE.get(id, key -> {
+            DatasetEntity datasetEntity = this.getById(id);
+            if (datasetEntity == null) {
+                throw new GlobalException("数据集不存在");
+            }
+            GroovyDataSetConfig config = (GroovyDataSetConfig) datasetEntity.getConfig();
+            String script = config.getScript();
+            // 参数预处理
+            List<DatasetParamDTO> paramList = paramsClient.handleParams(finalParams);
+            Map<String, Object> paramMap = this.buildParams(paramList, script);
+            return GroovyUtils.run(script, paramMap);
+        });
+
     }
 
 
