@@ -3,6 +3,7 @@ package com.gccloud.dataset.entity;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.gccloud.common.entity.SuperEntity;
+import com.gccloud.dataset.constant.DatasetConstant;
 import com.gccloud.dataset.entity.config.BaseDataSetConfig;
 import com.gccloud.dataset.typehandler.BaseDataSetConfigTypeHandler;
 import io.swagger.annotations.ApiModel;
@@ -42,6 +43,12 @@ public class DatasetEntity extends SuperEntity {
 
     @ApiModelProperty(value = "唯一编码")
     private String code;
+
+    /**
+     * 参考 {@link DatasetConstant.DatasetCache}
+     */
+    @ApiModelProperty(value = "是否对执行结构缓存 0 不缓存 1 缓存")
+    private Integer cache;
 
     @ApiModelProperty(value = "具体数据集配置")
     @TableField(typeHandler = BaseDataSetConfigTypeHandler.class)

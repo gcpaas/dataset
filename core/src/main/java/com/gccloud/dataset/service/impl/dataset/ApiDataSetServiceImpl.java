@@ -46,23 +46,32 @@ public class ApiDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntity
         if (StringUtils.isBlank(id)) {
             throw new GlobalException("数据集id不能为空");
         }
+        DatasetEntity entity = this.getById(id);
+        if (entity == null) {
+            throw new GlobalException("数据集不存在");
+        }
         final List<DatasetParamDTO> finalParamList = Lists.newArrayList(paramList);
-        return DATASET_CACHE.get(id, key -> {
-            DatasetEntity entity = this.getById(id);
-            if (entity == null) {
-                throw new GlobalException("数据集不存在");
-            }
-            ApiDataSetConfig config = (ApiDataSetConfig) entity.getConfig();
-            List<DatasetParamDTO> params = paramsClient.handleParams(finalParamList);
-            config = this.handleParams(config, params);
-            if (config.getRequestType().equals("frontend")) {
-                return config;
-            }
-            return this.getBackendData(config);
-        });
-
+        if (DatasetConstant.DatasetCache.OPEN.equals(entity.getCache())) {
+            return DATASET_CACHE.get(id, key -> getData(entity, finalParamList));
+        }
+        return getData(entity, finalParamList);
     }
 
+    /**
+     * 获取数据
+     * @param entity
+     * @param finalParamList
+     * @return
+     */
+    private Object getData(DatasetEntity entity, List<DatasetParamDTO> finalParamList) {
+        ApiDataSetConfig config = (ApiDataSetConfig) entity.getConfig();
+        List<DatasetParamDTO> params = paramsClient.handleParams(finalParamList);
+        config = this.handleParams(config, params);
+        if (config.getRequestType().equals("frontend")) {
+            return config;
+        }
+        return this.getBackendData(config);
+    }
 
 
     @Override

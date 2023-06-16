@@ -70,22 +70,35 @@ public class StoredProcedureDataSetServiceImpl extends ServiceImpl<DatasetDao, D
             throw new GlobalException("数据集id不能为空");
         }
         final List<DatasetParamDTO> finalParams = params;
-        return DATASET_CACHE.get(id, key -> {
-            DatasetEntity dataset = this.getById(id);
-            StoredProcedureDataSetConfig config = (StoredProcedureDataSetConfig) dataset.getConfig();
-            // 存储过程
-            String sqlProcess = config.getSqlProcess();
-            // 参数预处理
-            List<DatasetParamDTO> paramsList = paramsClient.handleParams(finalParams);
-            // 参数替换
-            sqlProcess = DBUtils.updateParamsConfig(sqlProcess, paramsList);
-            DatasourceEntity datasource = datasourceService.getInfoById(config.getSourceId());
-            IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
-            // 执行存储过程
-            DataVO dataVO = buildService.executeProcedure(datasource, sqlProcess, null, null);
-            return dataVO.getData();
-        });
+        DatasetEntity dataset = this.getById(id);
+        if (dataset == null) {
+            throw new GlobalException("数据集不存在");
+        }
+        if (DatasetConstant.DatasetCache.OPEN.equals(dataset.getCache())) {
+            return DATASET_CACHE.get(id, key -> getData(finalParams, dataset));
+        }
+        return getData(finalParams, dataset);
+    }
 
+    /**
+     * 获取数据
+     * @param finalParams
+     * @param dataset
+     * @return
+     */
+    private Object getData(List<DatasetParamDTO> finalParams, DatasetEntity dataset) {
+        StoredProcedureDataSetConfig config = (StoredProcedureDataSetConfig) dataset.getConfig();
+        // 存储过程
+        String sqlProcess = config.getSqlProcess();
+        // 参数预处理
+        List<DatasetParamDTO> paramsList = paramsClient.handleParams(finalParams);
+        // 参数替换
+        sqlProcess = DBUtils.updateParamsConfig(sqlProcess, paramsList);
+        DatasourceEntity datasource = datasourceService.getInfoById(config.getSourceId());
+        IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
+        // 执行存储过程
+        DataVO dataVO = buildService.executeProcedure(datasource, sqlProcess, null, null);
+        return dataVO.getData();
     }
 
     @Override

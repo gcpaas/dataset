@@ -14,6 +14,7 @@ import com.gccloud.dataset.service.IBaseDataSetService;
 import com.gccloud.dataset.vo.DataVO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -41,19 +42,30 @@ public class GroovyDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
             throw new GlobalException("数据集id不能为空");
         }
         final List<DatasetParamDTO> finalParams = params;
-        return DATASET_CACHE.get(id, key -> {
-            DatasetEntity datasetEntity = this.getById(id);
-            if (datasetEntity == null) {
-                throw new GlobalException("数据集不存在");
-            }
-            GroovyDataSetConfig config = (GroovyDataSetConfig) datasetEntity.getConfig();
-            String script = config.getScript();
-            // 参数预处理
-            List<DatasetParamDTO> paramList = paramsClient.handleParams(finalParams);
-            Map<String, Object> paramMap = this.buildParams(paramList, script);
-            return GroovyUtils.run(script, paramMap);
-        });
+        DatasetEntity datasetEntity = this.getById(id);
+        if (datasetEntity == null) {
+            throw new GlobalException("数据集不存在");
+        }
+        if (DatasetConstant.DatasetCache.OPEN.equals(datasetEntity.getCache())) {
+            return DATASET_CACHE.get(id, key -> getData(finalParams, datasetEntity));
+        }
+        return getData(finalParams, datasetEntity);
 
+    }
+
+    /**
+     * 获取数据
+     * @param finalParams
+     * @param datasetEntity
+     * @return
+     */
+    private Object getData(List<DatasetParamDTO> finalParams, DatasetEntity datasetEntity) {
+        GroovyDataSetConfig config = (GroovyDataSetConfig) datasetEntity.getConfig();
+        String script = config.getScript();
+        // 参数预处理
+        List<DatasetParamDTO> paramList = paramsClient.handleParams(finalParams);
+        Map<String, Object> paramMap = this.buildParams(paramList, script);
+        return GroovyUtils.run(script, paramMap);
     }
 
 

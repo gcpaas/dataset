@@ -16,7 +16,6 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -26,8 +25,10 @@ import java.util.concurrent.TimeUnit;
  */
 public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
 
+    /**
+     * 数据集结果缓存
+     */
     AsyncCache<String, Object> DATASET_CACHE = Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).buildAsync();
-
 
 
     /**
@@ -77,6 +78,7 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
      */
     default void update(DatasetEntity entity) {
         this.updateById(entity);
+        DATASET_CACHE.synchronous().invalidate(entity.getId());
     }
 
 
@@ -87,6 +89,7 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
      */
     default void delete(String id) {
         this.removeById(id);
+        DATASET_CACHE.synchronous().invalidate(id);
     }
 
     /**

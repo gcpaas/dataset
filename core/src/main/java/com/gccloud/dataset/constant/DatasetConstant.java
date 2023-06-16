@@ -69,6 +69,23 @@ public interface DatasetConstant {
     }
 
     /**
+     * 数据集缓存状态
+     */
+    interface DatasetCache {
+
+        /**
+         * 数据集开启缓存
+         */
+        Integer OPEN = 1;
+
+
+        /**
+         * 数据集关闭缓存
+         */
+        Integer CLOSE = 0;
+    }
+
+    /**
      * 数据是否去重
      */
     interface DataRepeat {
