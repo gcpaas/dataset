@@ -11,15 +11,15 @@
     </parent>
 
     <groupId>com.gccloud</groupId>
-    <artifactId>gc-starter-dataset</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <artifactId>dataset</artifactId>
+    <version>0.0.1.2023061901.Alpha</version>
 
     <packaging>pom</packaging>
     <description>数据集</description>
 
     <modules>
-        <module>common</module>
-        <module>core</module>
+        <module>dataset-common</module>
+        <module>dataset-core</module>
     </modules>
 
 
@@ -68,7 +68,7 @@
     <profiles>
         <profile>
             <!--注意,此id必须与setting.xml中指定的一致-->
-            <id>release</id>
+            <id>deploy</id>
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
@@ -154,7 +154,7 @@
 
             <distributionManagement>
                 <repository>
-                    <id>release</id>
+                    <id>deploy</id>
                     <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
                 </repository>
             </distributionManagement>
