@@ -74,14 +74,15 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
             entity.setParentId(SUPER_PARENT_ID);
         }
         this.save(entity);
-        if (!Objects.equals(entity.getParentId(), SUPER_PARENT_ID)) {
+        entity.setIds(entity.getId());
+        if (!SUPER_PARENT_ID.equals(entity.getParentId())) {
             CategoryEntity parent = this.getById(entity.getParentId());
             if (parent == null) {
                 throw new GlobalException("父节点不存在");
             }
             entity.setIds(parent.getIds() + ID_SPLIT + entity.getId());
-            this.updateById(entity);
         }
+        this.updateById(entity);
         return entity.getId();
     }
 
