@@ -51,4 +51,16 @@ public interface CommonConst {
         }
     }
 
+    /**
+     * 扫描包路径
+     */
+    interface ScanPackage {
+
+        /**
+         * 基础包路径
+         */
+        String COMPONENT = "com.gccloud.common";
+
+    }
+
 }
