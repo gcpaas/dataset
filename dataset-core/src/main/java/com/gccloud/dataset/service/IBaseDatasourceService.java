@@ -108,6 +108,9 @@ public interface IBaseDatasourceService extends ISuperService<DatasourceEntity> 
             throw new GlobalException("id不能为空");
         }
         DatasourceEntity entity = this.getById(id);
+        if (entity == null) {
+            throw new GlobalException("数据源不存在");
+        }
         return entity;
     }
 
