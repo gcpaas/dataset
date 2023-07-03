@@ -12,6 +12,7 @@ import com.gccloud.dataset.dto.TestExecuteDTO;
 import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.config.ApiDataSetConfig;
 import com.gccloud.dataset.params.ParamsClient;
+import com.gccloud.dataset.permission.PermissionClient;
 import com.gccloud.dataset.service.IBaseDataSetService;
 import com.gccloud.dataset.vo.DataVO;
 import com.google.common.collect.Lists;
@@ -40,6 +41,28 @@ public class ApiDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntity
     @Resource
     private ParamsClient paramsClient;
 
+    @Resource
+    private PermissionClient permissionClient;
+
+
+    @Override
+    public String add(DatasetEntity entity) {
+        String id = IBaseDataSetService.super.add(entity);
+        if (permissionClient.hasPermissionService()) {
+            // 添加数据集权限
+            permissionClient.addPermission(id);
+        }
+        return id;
+    }
+
+    @Override
+    public void delete(String id) {
+        IBaseDataSetService.super.delete(id);
+        if (permissionClient.hasPermissionService()) {
+            // 删除数据集权限
+            permissionClient.deletePermission(id);
+        }
+    }
 
     @Override
     public Object execute(String id, List<DatasetParamDTO> paramList) {

@@ -49,6 +49,11 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
         return this.page(searchDTO, this.getQueryWrapper(searchDTO));
     }
 
+    /**
+     * 数据集查询的条件组装
+     * @param searchDTO
+     * @return
+     */
     default LambdaQueryWrapper<DatasetEntity> getQueryWrapper(DatasetSearchDTO searchDTO) {
         LambdaQueryWrapper<DatasetEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.like(StringUtils.isNotBlank(searchDTO.getName()), DatasetEntity::getName, searchDTO.getName());

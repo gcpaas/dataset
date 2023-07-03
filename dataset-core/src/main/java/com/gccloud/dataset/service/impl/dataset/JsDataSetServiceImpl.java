@@ -2,21 +2,20 @@ package com.gccloud.dataset.service.impl.dataset;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.gccloud.common.exception.GlobalException;
-import com.gccloud.common.utils.JSON;
 import com.gccloud.dataset.constant.DatasetConstant;
 import com.gccloud.dataset.dao.DatasetDao;
 import com.gccloud.dataset.dto.DatasetParamDTO;
 import com.gccloud.dataset.dto.TestExecuteDTO;
 import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.config.JsDataSetConfig;
-import com.gccloud.dataset.entity.config.JsonDataSetConfig;
+import com.gccloud.dataset.permission.PermissionClient;
 import com.gccloud.dataset.service.IBaseDataSetService;
 import com.gccloud.dataset.vo.DataVO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.util.List;
 
 /**
@@ -29,6 +28,28 @@ import java.util.List;
 @Service(DatasetConstant.DataSetType.JS)
 public class JsDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntity> implements IBaseDataSetService {
 
+    @Resource
+    private PermissionClient permissionClient;
+
+
+    @Override
+    public String add(DatasetEntity entity) {
+        String id = IBaseDataSetService.super.add(entity);
+        if (permissionClient.hasPermissionService()) {
+            // 添加数据集权限
+            permissionClient.addPermission(id);
+        }
+        return id;
+    }
+
+    @Override
+    public void delete(String id) {
+        IBaseDataSetService.super.delete(id);
+        if (permissionClient.hasPermissionService()) {
+            // 删除数据集权限
+            permissionClient.deletePermission(id);
+        }
+    }
     @Override
     public Object execute(String id, List<DatasetParamDTO> params) {
         if (StringUtils.isBlank(id)) {

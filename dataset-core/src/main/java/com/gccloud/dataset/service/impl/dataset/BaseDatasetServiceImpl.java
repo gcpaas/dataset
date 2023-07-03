@@ -2,6 +2,7 @@ package com.gccloud.dataset.service.impl.dataset;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.gccloud.common.entity.SuperEntity;
 import com.gccloud.common.vo.PageVO;
 import com.gccloud.dataset.constant.DatasetConstant;
 import com.gccloud.dataset.dao.DatasetDao;
@@ -11,6 +12,7 @@ import com.gccloud.dataset.dto.TestExecuteDTO;
 import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.config.BaseDataSetConfig;
 import com.gccloud.dataset.entity.config.OriginalDataSetConfig;
+import com.gccloud.dataset.permission.PermissionClient;
 import com.gccloud.dataset.service.IBaseDataSetService;
 import com.gccloud.dataset.service.ICategoryService;
 import com.gccloud.dataset.vo.DataVO;
@@ -20,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 数据集基础服务，仅提供数据集的基础操作（增、删、改、查），未实现具体的数据集执行逻辑
@@ -33,6 +36,89 @@ public class BaseDatasetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
 
     @Resource
     private ICategoryService categoryService;
+
+    @Resource
+    private PermissionClient permissionClient;
+
+    @Override
+    public List<DatasetEntity> getList(DatasetSearchDTO searchDTO) {
+        if (!permissionClient.hasPermissionService()) {
+            return IBaseDataSetService.super.getList(searchDTO);
+        }
+        // 查询数据集id列表
+        LambdaQueryWrapper<DatasetEntity> queryWrapper = getQueryWrapper(searchDTO);
+        queryWrapper.select(SuperEntity::getId);
+        List<DatasetEntity> datasetList = this.list(queryWrapper);
+        List<String> datasetIdList = datasetList.stream().map(DatasetEntity::getId).collect(Collectors.toList());
+        // 调用权限服务过滤数据集id列表
+        List<String> filterIdList = permissionClient.filterByPermission(datasetIdList);
+        // 查询数据集列表
+        LambdaQueryWrapper<DatasetEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(SuperEntity::getId, filterIdList);
+        return this.list(wrapper);
+    }
+
+    @Override
+    public PageVO<DatasetEntity> getPage(DatasetSearchDTO searchDTO) {
+        if (!permissionClient.hasPermissionService()) {
+            return IBaseDataSetService.super.getPage(searchDTO);
+        }
+        // 查询数据集id列表
+        LambdaQueryWrapper<DatasetEntity> queryWrapper = getQueryWrapper(searchDTO);
+        queryWrapper.select(SuperEntity::getId);
+        List<DatasetEntity> datasetList = this.list(queryWrapper);
+        List<String> datasetIdList = datasetList.stream().map(DatasetEntity::getId).collect(Collectors.toList());
+        // 检查分页参数
+        int current = searchDTO.getCurrent();
+        int size = searchDTO.getSize();
+        int start = (current - 1) * size;
+        int end = current * size;
+        if (start > datasetIdList.size()) {
+            return new PageVO<>();
+        }
+        List<String> filterIds = permissionClient.filterByPermission(datasetIdList);
+        if (start > filterIds.size()) {
+            return new PageVO<>();
+        }
+        if (end > filterIds.size()) {
+            end = filterIds.size();
+        }
+        List<String> pageIds = filterIds.subList(start, end);
+        // 查询数据集列表
+        LambdaQueryWrapper<DatasetEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(SuperEntity::getId, pageIds);
+        List<DatasetEntity> list = this.list(wrapper);
+        PageVO<DatasetEntity> pageVO = new PageVO<>();
+        pageVO.setCurrent(current);
+        pageVO.setSize(size);
+        pageVO.setTotalCount(filterIds.size());
+        pageVO.setList(list);
+        int totalPage = filterIds.size() / size;
+        if (filterIds.size() % size != 0) {
+            totalPage++;
+        }
+        pageVO.setTotalPage(totalPage);
+        return pageVO;
+    }
+
+    @Override
+    public String add(DatasetEntity entity) {
+        String id = IBaseDataSetService.super.add(entity);
+        if (permissionClient.hasPermissionService()) {
+            // 添加数据集权限
+            permissionClient.addPermission(id);
+        }
+        return id;
+    }
+
+    @Override
+    public void delete(String id) {
+        IBaseDataSetService.super.delete(id);
+        if (permissionClient.hasPermissionService()) {
+            // 删除数据集权限
+            permissionClient.deletePermission(id);
+        }
+    }
 
     @Override
     public Object execute(String id, List<DatasetParamDTO> params) {

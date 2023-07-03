@@ -61,28 +61,32 @@ public class DatasetController {
     @ApiOperation("新增")
     @PostMapping("/add")
     public R<String> add(@RequestBody DatasetEntity datasetEntity) {
-        String id = baseDatasetService.add(datasetEntity);
+        IBaseDataSetService dataSetService = dataSetServiceFactory.build(datasetEntity.getDatasetType());
+        String id = dataSetService.add(datasetEntity);
         return R.success(id);
     }
 
     @ApiOperation("修改")
     @PostMapping("/update")
     public R<Void> update(@RequestBody DatasetEntity datasetEntity) {
-        baseDatasetService.update(datasetEntity);
+        IBaseDataSetService dataSetService = dataSetServiceFactory.build(datasetEntity.getDatasetType());
+        dataSetService.update(datasetEntity);
         return R.success();
     }
 
     @ApiOperation("删除")
     @PostMapping("/delete/{id}")
     public R<Void> delete(@PathVariable("id") String id) {
-        baseDatasetService.delete(id);
+        IBaseDataSetService dataSetService = dataSetServiceFactory.buildById(id);
+        dataSetService.delete(id);
         return R.success();
     }
 
     @ApiOperation("详情")
     @GetMapping("/info/{id}")
     public R<DatasetEntity> info(@PathVariable("id") String id) {
-        DatasetEntity datasetEntity = baseDatasetService.getById(id);
+        IBaseDataSetService dataSetService = dataSetServiceFactory.buildById(id);
+        DatasetEntity datasetEntity = dataSetService.getById(id);
         return R.success(datasetEntity);
     }
 

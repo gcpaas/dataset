@@ -10,6 +10,7 @@ import com.gccloud.dataset.dto.TestExecuteDTO;
 import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.DatasourceEntity;
 import com.gccloud.dataset.entity.config.OriginalDataSetConfig;
+import com.gccloud.dataset.permission.PermissionClient;
 import com.gccloud.dataset.service.IBaseDataSetService;
 import com.gccloud.dataset.service.IBaseDatasourceService;
 import com.gccloud.dataset.service.factory.DatasourceServiceFactory;
@@ -38,6 +39,29 @@ public class OriginalDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetE
 
     @Resource
     private BaseDatasourceServiceImpl datasourceService;
+
+    @Resource
+    private PermissionClient permissionClient;
+
+
+    @Override
+    public String add(DatasetEntity entity) {
+        String id = IBaseDataSetService.super.add(entity);
+        if (permissionClient.hasPermissionService()) {
+            // 添加数据集权限
+            permissionClient.addPermission(id);
+        }
+        return id;
+    }
+
+    @Override
+    public void delete(String id) {
+        IBaseDataSetService.super.delete(id);
+        if (permissionClient.hasPermissionService()) {
+            // 删除数据集权限
+            permissionClient.deletePermission(id);
+        }
+    }
 
     @Override
     public PageVO execute(String id, List<DatasetParamDTO> params, int current, int size) {
