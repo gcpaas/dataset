@@ -32,4 +32,18 @@ public class ParamsClient {
         return params;
     }
 
+
+    /**
+     * 脚本预处理
+     * @param datasetType
+     * @param script
+     * @return
+     */
+    public String handleScript(String datasetType, String script) {
+        if (paramsService != null) {
+            script = paramsService.handleScript(datasetType, script);
+        }
+        return script;
+    }
+
 }

@@ -20,4 +20,13 @@ public interface IParamsService {
      */
     List<DatasetParamDTO> handleParams(List<DatasetParamDTO> params);
 
+
+    /**
+     * 自定义处理脚本
+     * @param datasetType 数据集类型
+     * @param script 脚本
+     * @return 处理后的脚本
+     */
+    String handleScript(String datasetType, String script);
+
 }

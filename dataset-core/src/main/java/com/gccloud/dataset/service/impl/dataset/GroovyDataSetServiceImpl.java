@@ -10,12 +10,11 @@ import com.gccloud.dataset.dto.TestExecuteDTO;
 import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.config.GroovyDataSetConfig;
 import com.gccloud.dataset.params.ParamsClient;
-import com.gccloud.dataset.permission.PermissionClient;
+import com.gccloud.dataset.permission.DatasetPermissionClient;
 import com.gccloud.dataset.service.IBaseDataSetService;
 import com.gccloud.dataset.vo.DataVO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -37,15 +36,15 @@ public class GroovyDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
     private ParamsClient paramsClient;
 
     @Resource
-    private PermissionClient permissionClient;
+    private DatasetPermissionClient datasetPermissionClient;
 
 
     @Override
     public String add(DatasetEntity entity) {
         String id = IBaseDataSetService.super.add(entity);
-        if (permissionClient.hasPermissionService()) {
+        if (datasetPermissionClient.hasPermissionService()) {
             // 添加数据集权限
-            permissionClient.addPermission(id);
+            datasetPermissionClient.addPermission(id);
         }
         return id;
     }
@@ -53,9 +52,9 @@ public class GroovyDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
     @Override
     public void delete(String id) {
         IBaseDataSetService.super.delete(id);
-        if (permissionClient.hasPermissionService()) {
+        if (datasetPermissionClient.hasPermissionService()) {
             // 删除数据集权限
-            permissionClient.deletePermission(id);
+            datasetPermissionClient.deletePermission(id);
         }
     }
 

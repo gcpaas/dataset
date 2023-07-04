@@ -8,7 +8,7 @@ import com.gccloud.dataset.dto.DatasetParamDTO;
 import com.gccloud.dataset.dto.TestExecuteDTO;
 import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.config.JsDataSetConfig;
-import com.gccloud.dataset.permission.PermissionClient;
+import com.gccloud.dataset.permission.DatasetPermissionClient;
 import com.gccloud.dataset.service.IBaseDataSetService;
 import com.gccloud.dataset.vo.DataVO;
 import lombok.extern.slf4j.Slf4j;
@@ -29,15 +29,15 @@ import java.util.List;
 public class JsDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntity> implements IBaseDataSetService {
 
     @Resource
-    private PermissionClient permissionClient;
+    private DatasetPermissionClient datasetPermissionClient;
 
 
     @Override
     public String add(DatasetEntity entity) {
         String id = IBaseDataSetService.super.add(entity);
-        if (permissionClient.hasPermissionService()) {
+        if (datasetPermissionClient.hasPermissionService()) {
             // 添加数据集权限
-            permissionClient.addPermission(id);
+            datasetPermissionClient.addPermission(id);
         }
         return id;
     }
@@ -45,9 +45,9 @@ public class JsDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntity>
     @Override
     public void delete(String id) {
         IBaseDataSetService.super.delete(id);
-        if (permissionClient.hasPermissionService()) {
+        if (datasetPermissionClient.hasPermissionService()) {
             // 删除数据集权限
-            permissionClient.deletePermission(id);
+            datasetPermissionClient.deletePermission(id);
         }
     }
     @Override

@@ -12,11 +12,11 @@ import java.util.List;
  * @date 2023/7/3 9:41
  */
 @Component
-public class PermissionClient {
+public class DatasetPermissionClient {
 
 
     @Autowired(required = false)
-    private IPermissionService permissionService;
+    private IDatasetPermissionService permissionService;
 
     /**
      * 是否有实现类

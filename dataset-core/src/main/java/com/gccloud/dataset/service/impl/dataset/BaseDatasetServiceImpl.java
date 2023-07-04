@@ -12,7 +12,7 @@ import com.gccloud.dataset.dto.TestExecuteDTO;
 import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.config.BaseDataSetConfig;
 import com.gccloud.dataset.entity.config.OriginalDataSetConfig;
-import com.gccloud.dataset.permission.PermissionClient;
+import com.gccloud.dataset.permission.DatasetPermissionClient;
 import com.gccloud.dataset.service.IBaseDataSetService;
 import com.gccloud.dataset.service.ICategoryService;
 import com.gccloud.dataset.vo.DataVO;
@@ -38,11 +38,11 @@ public class BaseDatasetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
     private ICategoryService categoryService;
 
     @Resource
-    private PermissionClient permissionClient;
+    private DatasetPermissionClient datasetPermissionClient;
 
     @Override
     public List<DatasetEntity> getList(DatasetSearchDTO searchDTO) {
-        if (!permissionClient.hasPermissionService()) {
+        if (!datasetPermissionClient.hasPermissionService()) {
             return IBaseDataSetService.super.getList(searchDTO);
         }
         // 查询数据集id列表
@@ -51,7 +51,7 @@ public class BaseDatasetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
         List<DatasetEntity> datasetList = this.list(queryWrapper);
         List<String> datasetIdList = datasetList.stream().map(DatasetEntity::getId).collect(Collectors.toList());
         // 调用权限服务过滤数据集id列表
-        List<String> filterIdList = permissionClient.filterByPermission(datasetIdList);
+        List<String> filterIdList = datasetPermissionClient.filterByPermission(datasetIdList);
         // 查询数据集列表
         LambdaQueryWrapper<DatasetEntity> wrapper = new LambdaQueryWrapper<>();
         wrapper.in(SuperEntity::getId, filterIdList);
@@ -60,7 +60,7 @@ public class BaseDatasetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
 
     @Override
     public PageVO<DatasetEntity> getPage(DatasetSearchDTO searchDTO) {
-        if (!permissionClient.hasPermissionService()) {
+        if (!datasetPermissionClient.hasPermissionService()) {
             return IBaseDataSetService.super.getPage(searchDTO);
         }
         // 查询数据集id列表
@@ -76,7 +76,7 @@ public class BaseDatasetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
         if (start > datasetIdList.size()) {
             return new PageVO<>();
         }
-        List<String> filterIds = permissionClient.filterByPermission(datasetIdList);
+        List<String> filterIds = datasetPermissionClient.filterByPermission(datasetIdList);
         if (start > filterIds.size()) {
             return new PageVO<>();
         }
@@ -104,9 +104,9 @@ public class BaseDatasetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
     @Override
     public String add(DatasetEntity entity) {
         String id = IBaseDataSetService.super.add(entity);
-        if (permissionClient.hasPermissionService()) {
+        if (datasetPermissionClient.hasPermissionService()) {
             // 添加数据集权限
-            permissionClient.addPermission(id);
+            datasetPermissionClient.addPermission(id);
         }
         return id;
     }
@@ -114,9 +114,9 @@ public class BaseDatasetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
     @Override
     public void delete(String id) {
         IBaseDataSetService.super.delete(id);
-        if (permissionClient.hasPermissionService()) {
+        if (datasetPermissionClient.hasPermissionService()) {
             // 删除数据集权限
-            permissionClient.deletePermission(id);
+            datasetPermissionClient.deletePermission(id);
         }
     }
 

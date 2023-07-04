@@ -8,7 +8,7 @@ import java.util.List;
  * @version 1.0
  * @date 2023/7/3 9:18
  */
-public interface IPermissionService {
+public interface IDatasetPermissionService {
 
 
     /**

@@ -10,7 +10,7 @@ import com.gccloud.dataset.dto.TestExecuteDTO;
 import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.DatasourceEntity;
 import com.gccloud.dataset.entity.config.OriginalDataSetConfig;
-import com.gccloud.dataset.permission.PermissionClient;
+import com.gccloud.dataset.permission.DatasetPermissionClient;
 import com.gccloud.dataset.service.IBaseDataSetService;
 import com.gccloud.dataset.service.IBaseDatasourceService;
 import com.gccloud.dataset.service.factory.DatasourceServiceFactory;
@@ -22,7 +22,6 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
-import java.util.Map;
 
 /**
  * 原始数据集服务实现类
@@ -41,15 +40,15 @@ public class OriginalDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetE
     private BaseDatasourceServiceImpl datasourceService;
 
     @Resource
-    private PermissionClient permissionClient;
+    private DatasetPermissionClient datasetPermissionClient;
 
 
     @Override
     public String add(DatasetEntity entity) {
         String id = IBaseDataSetService.super.add(entity);
-        if (permissionClient.hasPermissionService()) {
+        if (datasetPermissionClient.hasPermissionService()) {
             // 添加数据集权限
-            permissionClient.addPermission(id);
+            datasetPermissionClient.addPermission(id);
         }
         return id;
     }
@@ -57,9 +56,9 @@ public class OriginalDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetE
     @Override
     public void delete(String id) {
         IBaseDataSetService.super.delete(id);
-        if (permissionClient.hasPermissionService()) {
+        if (datasetPermissionClient.hasPermissionService()) {
             // 删除数据集权限
-            permissionClient.deletePermission(id);
+            datasetPermissionClient.deletePermission(id);
         }
     }
 

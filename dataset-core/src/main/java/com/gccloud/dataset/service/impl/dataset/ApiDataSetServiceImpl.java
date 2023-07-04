@@ -12,7 +12,7 @@ import com.gccloud.dataset.dto.TestExecuteDTO;
 import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.config.ApiDataSetConfig;
 import com.gccloud.dataset.params.ParamsClient;
-import com.gccloud.dataset.permission.PermissionClient;
+import com.gccloud.dataset.permission.DatasetPermissionClient;
 import com.gccloud.dataset.service.IBaseDataSetService;
 import com.gccloud.dataset.vo.DataVO;
 import com.google.common.collect.Lists;
@@ -42,15 +42,15 @@ public class ApiDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntity
     private ParamsClient paramsClient;
 
     @Resource
-    private PermissionClient permissionClient;
+    private DatasetPermissionClient datasetPermissionClient;
 
 
     @Override
     public String add(DatasetEntity entity) {
         String id = IBaseDataSetService.super.add(entity);
-        if (permissionClient.hasPermissionService()) {
+        if (datasetPermissionClient.hasPermissionService()) {
             // 添加数据集权限
-            permissionClient.addPermission(id);
+            datasetPermissionClient.addPermission(id);
         }
         return id;
     }
@@ -58,9 +58,9 @@ public class ApiDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntity
     @Override
     public void delete(String id) {
         IBaseDataSetService.super.delete(id);
-        if (permissionClient.hasPermissionService()) {
+        if (datasetPermissionClient.hasPermissionService()) {
             // 删除数据集权限
-            permissionClient.deletePermission(id);
+            datasetPermissionClient.deletePermission(id);
         }
     }
 
@@ -103,9 +103,11 @@ public class ApiDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntity
         if (StringUtils.isBlank(apiInfoJson)) {
             throw new GlobalException("数据集测试数据不能为空");
         }
+        apiInfoJson = paramsClient.handleScript(executeDTO.getDataSetType(), apiInfoJson);
         ApiDataSetConfig config = JSON.parseObject(apiInfoJson, ApiDataSetConfig.class);
         List<DatasetParamDTO> paramList = executeDTO.getParams();
         paramList = paramsClient.handleParams(paramList);
+
         config = this.handleParams(config, paramList);
         DataVO dataVO = new DataVO();
         if (config.getRequestType().equals("frontend")) {

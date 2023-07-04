@@ -29,6 +29,14 @@ public class SuperEntity implements Serializable {
     @ApiModelProperty(notes = "更新时间")
     private Date updateDate;
 
+    @TableField(fill = FieldFill.INSERT)
+    @ApiModelProperty(notes = "创建用户ID")
+    private String createBy;
+
+    @TableField(fill = FieldFill.INSERT_UPDATE, insertStrategy = FieldStrategy.NEVER)
+    @ApiModelProperty(notes = "更新用户ID")
+    private String updateBy;
+
     @TableLogic(delval =  CommonConst.DelFlag.DELETE + "", value = CommonConst.DelFlag.NOAMAL + "")
     @ApiModelProperty(notes = "删除标识(0：正常，1：删除)", hidden = true)
     private Integer delFlag = 0;
