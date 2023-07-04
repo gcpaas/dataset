@@ -4,20 +4,18 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.gccloud.common.entity.SuperEntity;
 import com.gccloud.common.vo.PageVO;
-import com.gccloud.dataset.constant.DatasetConstant;
 import com.gccloud.dataset.dao.DatasetDao;
 import com.gccloud.dataset.dto.DatasetParamDTO;
 import com.gccloud.dataset.dto.DatasetSearchDTO;
 import com.gccloud.dataset.dto.TestExecuteDTO;
 import com.gccloud.dataset.entity.DatasetEntity;
-import com.gccloud.dataset.entity.config.BaseDataSetConfig;
-import com.gccloud.dataset.entity.config.OriginalDataSetConfig;
 import com.gccloud.dataset.permission.DatasetPermissionClient;
 import com.gccloud.dataset.service.IBaseDataSetService;
 import com.gccloud.dataset.service.ICategoryService;
 import com.gccloud.dataset.vo.DataVO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -31,6 +29,7 @@ import java.util.stream.Collectors;
  * @date 2023/6/1 13:37
  */
 @Slf4j
+@Primary
 @Service("baseDataSetService")
 public class BaseDatasetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntity> implements IBaseDataSetService {
 
@@ -132,34 +131,7 @@ public class BaseDatasetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
         return null;
     }
 
-    /**
-     * 根据数据源id和表名获取数据集列表
-     * @param tableName
-     * @param sourceId
-     * @return
-     */
-    public List<DatasetEntity> getListByTableName(String tableName, String sourceId) {
-        LambdaQueryWrapper<DatasetEntity> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(DatasetEntity::getDatasetType, DatasetConstant.DataSetType.ORIGINAL);
-        // 模糊匹配数据源id
-        queryWrapper.like(DatasetEntity::getConfig, "%\"sourceId\":\"" + tableName + "\"%");
-        // 模糊匹配表名
-        queryWrapper.like(DatasetEntity::getConfig, "%\"tableName\":\"" + sourceId + "\"%");
-        List<DatasetEntity> list = this.list(queryWrapper);
-        // 遍历二次过滤
-        list.removeIf(datasetEntity -> {
-            BaseDataSetConfig config = datasetEntity.getConfig();
-            if (!(config instanceof OriginalDataSetConfig)) {
-                return true;
-            }
-            OriginalDataSetConfig originalConfig = (OriginalDataSetConfig) config;
-            if (originalConfig.getSourceId().equals(sourceId) && originalConfig.getTableName().equals(tableName)) {
-                return false;
-            }
-            return true;
-        });
-        return list;
-    }
+
 
     /**
      * 组装查询条件

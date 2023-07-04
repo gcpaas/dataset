@@ -1,6 +1,7 @@
 package com.gccloud.dataset.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.gccloud.common.exception.GlobalException;
 import com.gccloud.common.service.ISuperService;
 import com.gccloud.common.utils.BeanConvertUtils;
 import com.gccloud.common.vo.PageVO;
@@ -13,6 +14,7 @@ import com.gccloud.dataset.vo.DataVO;
 import com.gccloud.dataset.vo.DatasetInfoVO;
 import com.github.benmanes.caffeine.cache.AsyncCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
@@ -71,6 +73,10 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
      * @return
      */
     default String add(DatasetEntity entity) {
+        if (StringUtils.isBlank(entity.getCode())) {
+            // 随机生成编码
+            entity.setCode(RandomStringUtils.randomAlphanumeric(10));
+        }
         this.save(entity);
         return entity.getId();
     }
@@ -125,6 +131,25 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
         datasetInfoVO.setFields(config.getFieldList());
         datasetInfoVO.setParams(config.getParamsList());
         return datasetInfoVO;
+    }
+
+    /**
+     * 根据code查询数据集详情
+     * @param code
+     * @return
+     */
+    default DatasetEntity getByCode(String code, String moduleCode) {
+        LambdaQueryWrapper<DatasetEntity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(DatasetEntity::getCode, code);
+        queryWrapper.eq(StringUtils.isNotBlank(moduleCode), DatasetEntity::getModuleCode, moduleCode);
+        List<DatasetEntity> list = this.list(queryWrapper);
+        if (list.isEmpty()) {
+            throw new GlobalException("数据集不存在");
+        }
+        if (list.size() > 1) {
+            throw new GlobalException("数据集编码重复");
+        }
+        return list.get(0);
     }
 
     /**

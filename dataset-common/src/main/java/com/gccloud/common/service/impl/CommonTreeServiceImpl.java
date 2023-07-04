@@ -13,8 +13,8 @@ import java.util.Map;
  * @author liuchengbiao
  * @date 2020-07-22 14:34
  */
-@Service("bigScreenTreeService")
-public class TreeServiceImpl implements ITreeService {
+@Service
+public class CommonTreeServiceImpl implements ITreeService {
 
     private static final String SUPER_PARENT_ID = "0";
 

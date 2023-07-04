@@ -5,6 +5,7 @@ import com.gccloud.dataset.dao.DatasourceDao;
 import com.gccloud.dataset.entity.DatasourceEntity;
 import com.gccloud.dataset.service.IBaseDatasourceService;
 import com.gccloud.dataset.vo.DataVO;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
 /**
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
  * @version 1.0
  * @date 2023/6/2 11:06
  */
+@Primary
 @Service("baseDatasourceService")
 public class BaseDatasourceServiceImpl extends ServiceImpl<DatasourceDao, DatasourceEntity> implements IBaseDatasourceService {
 

@@ -7,6 +7,7 @@ import com.gccloud.dataset.service.ICategoryService;
 import com.gccloud.dataset.vo.CategoryVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -20,6 +21,7 @@ import java.util.List;
 @Api(tags = "数据集")
 @RestController
 @RequestMapping("/category")
+@ConditionalOnProperty(prefix = "gc.starter.dataset.component", name = "DatasetCategoryController", havingValue = "DatasetCategoryController", matchIfMissing = true)
 public class CategoryController {
 
     @Resource
