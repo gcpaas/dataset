@@ -1,5 +1,6 @@
 package com.gccloud.dataset.utils;
 
+import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLStatement;
 import com.alibaba.druid.sql.ast.statement.SQLUseStatement;
@@ -343,7 +344,7 @@ public class DBUtils {
      * @return
      */
     public static List<String> getTableNames (String sql, String datasourceType) {
-        String jdbcType = "";
+        DbType jdbcType;
         switch (datasourceType.toLowerCase()) {
             case DatasetConstant.DatasourceType.MYSQL:
                 jdbcType = JdbcConstants.MYSQL;
