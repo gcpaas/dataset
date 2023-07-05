@@ -51,11 +51,10 @@ public class LabelController {
         return R.success();
     }
 
-    // TODO 响应变了
     @PostMapping("/checkRepeat")
     public R<Boolean> checkRepeat(@RequestBody LabelEntity labelEntity) {
-        boolean checkRepeat = labelService.checkRepeat(labelEntity);
-        return R.success(checkRepeat);
+        boolean repeat = labelService.checkRepeat(labelEntity);
+        return R.success(repeat);
     }
 
     @ApiOperation("删除标签")
@@ -85,19 +84,17 @@ public class LabelController {
         return R.success(labelType);
     }
 
-    // TODO 入参变了
     @ApiOperation("通过标签类型删除标签")
     @PostMapping("/removeLabelByType")
-    public R<Void> removeLabelByType(String labelType) {
-        labelService.deleteLabelByType(labelType);
+    public R<Void> removeLabelByType(@RequestBody LabelDTO labelVO) {
+        labelService.deleteLabelByType(labelVO.getLabelType());
         return R.success();
     }
 
-    // TODO 入参变了
     @ApiOperation("标签类型的修改")
     @PostMapping("/updateLabelType")
-    public R<Void> updateLabelType(String labelType, String oldLabelType) {
-        labelService.updateLabelType(labelType, oldLabelType);
+    public R<Void> updateLabelType(@RequestBody LabelDTO labelVO) {
+        labelService.updateLabelType(labelVO.getLabelType(), labelVO.getOldLabelType());
         return R.success();
     }
 

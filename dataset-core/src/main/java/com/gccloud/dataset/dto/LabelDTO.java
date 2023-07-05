@@ -24,6 +24,9 @@ public class LabelDTO {
     @ApiModelProperty(value = "标签类型")
     private String labelType;
 
+    @ApiModelProperty(value = "更新前标签类型")
+    private String oldLabelType;
+
     @ApiModelProperty(value = "标签说明")
     private String labelDesc;
 
