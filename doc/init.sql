@@ -8,6 +8,8 @@ CREATE TABLE `ds_category_tree` (
   `module_code` varchar(255) DEFAULT NULL,
   `update_date` timestamp                        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间',
   `create_date` timestamp                        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `create_by`    bigint(64)  null default 2 comment '创建人',
+  `update_by`    bigint(64)  null default 2 comment '更新人',
   `del_flag` tinyint(2) NOT NULL DEFAULT '0' COMMENT '删除标识',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='数据集种类树';
@@ -29,6 +31,8 @@ CREATE TABLE `ds_datasource` (
   `remark` varchar(255) DEFAULT NULL,
   `update_date` timestamp                        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间',
   `create_date` timestamp                        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `create_by`    bigint(64)  null default 2 comment '创建人',
+  `update_by`    bigint(64)  null default 2 comment '更新人',
   `del_flag` tinyint(2) NOT NULL DEFAULT '0' COMMENT '删除标识',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COMMENT='数据源配置表';
@@ -48,6 +52,36 @@ CREATE TABLE `ds_dataset` (
   `config` longtext COMMENT '数据集配置',
   `update_date` timestamp                        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间',
   `create_date` timestamp                        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `create_by`    bigint(64)  null default 2 comment '创建人',
+  `update_by`    bigint(64)  null default 2 comment '更新人',
   `del_flag` tinyint(2) NOT NULL DEFAULT '0' COMMENT '删除标识',
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB   DEFAULT CHARSET=utf8 COLLATE=utf8_general_mysql500_ci COMMENT='数据集表';
+
+DROP TABLE IF EXISTS `ds_label`;
+CREATE TABLE `ds_label` (
+  `id` bigint(32) NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `label_name` varchar(255) DEFAULT NULL COMMENT '标签名称',
+  `label_type` varchar(255) DEFAULT NULL COMMENT '标签类型',
+  `label_desc` varchar(255) DEFAULT NULL COMMENT '标签描述',
+  `update_date` timestamp                        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间',
+  `create_date` timestamp                        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `create_by`    bigint(64)  null default 2 comment '创建人',
+  `update_by`    bigint(64)  null default 2 comment '更新人',
+  `del_flag` tinyint(2) NOT NULL DEFAULT '0' COMMENT '删除标识',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE=InnoDB   DEFAULT CHARSET=utf8 COLLATE=utf8_general_mysql500_ci COMMENT='标签';
+
+
+
+DROP TABLE IF EXISTS `ds_dataset_label`;
+CREATE TABLE `ds_dataset_label` (
+  `id` bigint(32) NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `dataset_id` bigint(32) DEFAULT NULL COMMENT '数据集ID',
+  `label_id` bigint(32) DEFAULT NULL COMMENT '标签ID',
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE=InnoDB   DEFAULT CHARSET=utf8 COLLATE=utf8_general_mysql500_ci COMMENT='数据集与标签关联表';
+
+
+
+
