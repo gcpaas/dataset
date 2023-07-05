@@ -16,7 +16,7 @@ import lombok.Data;
  * @date 2022-11-14-9:57
  */
 @Data
-@TableName("ds_dataset")
+@TableName(value = "ds_dataset", autoResultMap = true)
 @ApiModel("主数据集")
 public class DatasetEntity extends SuperEntity {
 

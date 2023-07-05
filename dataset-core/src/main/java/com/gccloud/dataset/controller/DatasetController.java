@@ -2,12 +2,15 @@ package com.gccloud.dataset.controller;
 
 import com.gccloud.common.vo.PageVO;
 import com.gccloud.common.vo.R;
+import com.gccloud.dataset.dto.DatasetDTO;
 import com.gccloud.dataset.dto.DatasetSearchDTO;
 import com.gccloud.dataset.dto.ExecuteDTO;
 import com.gccloud.dataset.dto.TestExecuteDTO;
 import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.DatasourceEntity;
 import com.gccloud.dataset.service.IBaseDataSetService;
+import com.gccloud.dataset.service.IDatasetLabelService;
+import com.gccloud.dataset.service.ILabelService;
 import com.gccloud.dataset.service.factory.DataSetServiceFactory;
 import com.gccloud.dataset.service.impl.dataset.BaseDatasetServiceImpl;
 import com.gccloud.dataset.service.impl.datasource.BaseDatasourceServiceImpl;
@@ -43,11 +46,16 @@ public class DatasetController {
     @Resource
     private BaseDatasourceServiceImpl datasourceService;
 
+    @Resource
+    private IDatasetLabelService datasetLabelService;
+
 
     @ApiOperation("分页列表")
     @GetMapping("/page")
     public R<PageVO<DatasetEntity>> getPage(DatasetSearchDTO searchDTO) {
         PageVO<DatasetEntity> page = baseDatasetService.getPage(searchDTO);
+        List<String> labelIds = searchDTO.getLabelIds();
+        this.filterDatasetByIdList(page.getList(), labelIds);
         return R.success(page);
     }
 
@@ -55,22 +63,51 @@ public class DatasetController {
     @GetMapping("/list")
     public R<List<DatasetEntity>> getList(DatasetSearchDTO searchDTO) {
         List<DatasetEntity> list = baseDatasetService.getList(searchDTO);
+        List<String> labelIds = searchDTO.getLabelIds();
+        this.filterDatasetByIdList(list, labelIds);
         return R.success(list);
     }
 
+    /**
+     * 根据标签id列表过滤数据集
+     * @param datasetList
+     * @param labelIds
+     */
+    private void filterDatasetByIdList(List<DatasetEntity> datasetList, List<String> labelIds) {
+        if (labelIds == null || labelIds.isEmpty()) {
+            return;
+        }
+        List<String> datasetIds = datasetLabelService.getDatasetIdsByLabelIds(labelIds);
+        datasetList.removeIf(dataset -> !datasetIds.contains(dataset.getId()));
+    }
+
+
     @ApiOperation("新增")
     @PostMapping("/add")
-    public R<String> add(@RequestBody DatasetEntity datasetEntity) {
-        IBaseDataSetService dataSetService = dataSetServiceFactory.build(datasetEntity.getDatasetType());
-        String id = dataSetService.add(datasetEntity);
+    public R<String> add(@RequestBody DatasetDTO datasetDTO) {
+        IBaseDataSetService dataSetService = dataSetServiceFactory.build(datasetDTO.getDatasetType());
+        String id = dataSetService.add(datasetDTO);
+        // 保存与标签的关联关系
+        List<String> labelIds = datasetDTO.getLabelIds();
+        if (labelIds == null || labelIds.isEmpty()) {
+            return R.success(id);
+        }
+        datasetLabelService.addByDatasetId(id, labelIds);
         return R.success(id);
     }
 
     @ApiOperation("修改")
     @PostMapping("/update")
-    public R<Void> update(@RequestBody DatasetEntity datasetEntity) {
-        IBaseDataSetService dataSetService = dataSetServiceFactory.build(datasetEntity.getDatasetType());
-        dataSetService.update(datasetEntity);
+    public R<Void> update(@RequestBody DatasetDTO datasetDTO) {
+        IBaseDataSetService dataSetService = dataSetServiceFactory.build(datasetDTO.getDatasetType());
+        dataSetService.update(datasetDTO);
+        // 更新与标签的关联关系
+        List<String> labelIds = datasetDTO.getLabelIds();
+        datasetLabelService.deleteByDatasetId(datasetDTO.getId());
+        if (labelIds == null || labelIds.isEmpty()) {
+            return R.success();
+        }
+        datasetLabelService.addByDatasetId(datasetDTO.getId(), labelIds);
         return R.success();
     }
 
@@ -79,6 +116,7 @@ public class DatasetController {
     public R<Void> delete(@PathVariable("id") String id) {
         IBaseDataSetService dataSetService = dataSetServiceFactory.buildById(id);
         dataSetService.delete(id);
+        datasetLabelService.deleteByDatasetId(id);
         return R.success();
     }
 

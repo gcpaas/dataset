@@ -72,8 +72,6 @@ CREATE TABLE `ds_label` (
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB   DEFAULT CHARSET=utf8 COLLATE=utf8_general_mysql500_ci COMMENT='标签';
 
-
-
 DROP TABLE IF EXISTS `ds_dataset_label`;
 CREATE TABLE `ds_dataset_label` (
   `id` bigint(32) NOT NULL AUTO_INCREMENT COMMENT '主键',

@@ -4,6 +4,8 @@ import com.gccloud.common.dto.SearchDTO;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * @author hongyang
  * @version 1.0
@@ -29,6 +31,10 @@ public class DatasetSearchDTO extends SearchDTO {
 
     @ApiModelProperty(value = "所属数据源id")
     private String sourceId;
+
+    @ApiModelProperty(value = "关联标签id列表")
+    private List<String> labelIds;
+
 
 
 
