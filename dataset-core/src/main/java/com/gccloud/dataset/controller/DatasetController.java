@@ -53,32 +53,33 @@ public class DatasetController {
     @ApiOperation("分页列表")
     @GetMapping("/page")
     public R<PageVO<DatasetEntity>> getPage(DatasetSearchDTO searchDTO) {
-        PageVO<DatasetEntity> page = baseDatasetService.getPage(searchDTO);
         List<String> labelIds = searchDTO.getLabelIds();
-        this.filterDatasetByIdList(page.getList(), labelIds);
+        List<String> datasetIdList = this.filterDatasetByIdList(labelIds);
+        searchDTO.setDatasetIds(datasetIdList);
+        PageVO<DatasetEntity> page = baseDatasetService.getPage(searchDTO);
         return R.success(page);
     }
 
     @ApiOperation("列表")
     @GetMapping("/list")
     public R<List<DatasetEntity>> getList(DatasetSearchDTO searchDTO) {
-        List<DatasetEntity> list = baseDatasetService.getList(searchDTO);
         List<String> labelIds = searchDTO.getLabelIds();
-        this.filterDatasetByIdList(list, labelIds);
+        List<String> datasetIdList = this.filterDatasetByIdList(labelIds);
+        searchDTO.setDatasetIds(datasetIdList);
+        List<DatasetEntity> list = baseDatasetService.getList(searchDTO);
         return R.success(list);
     }
 
     /**
      * 根据标签id列表过滤数据集
-     * @param datasetList
      * @param labelIds
+     * @return
      */
-    private void filterDatasetByIdList(List<DatasetEntity> datasetList, List<String> labelIds) {
+    private List<String> filterDatasetByIdList(List<String> labelIds) {
         if (labelIds == null || labelIds.isEmpty()) {
-            return;
+            return null;
         }
-        List<String> datasetIds = datasetLabelService.getDatasetIdsByLabelIds(labelIds);
-        datasetList.removeIf(dataset -> !datasetIds.contains(dataset.getId()));
+        return datasetLabelService.getDatasetIdsByLabelIds(labelIds);
     }
 
 

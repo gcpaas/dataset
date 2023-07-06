@@ -7,6 +7,7 @@ import com.gccloud.dataset.dto.LabelSearchDTO;
 import com.gccloud.dataset.entity.LabelEntity;
 import com.gccloud.dataset.service.IDatasetLabelService;
 import com.gccloud.dataset.service.ILabelService;
+import com.gccloud.dataset.vo.DatasetLabelVO;
 import com.gccloud.dataset.vo.LabelVO;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author hongyang
@@ -100,9 +102,17 @@ public class LabelController {
 
     @ApiOperation("通过数据集id获取标签")
     @GetMapping("/queryDataSetLabelList/{dataSetId}")
-    public R<Object> queryDataSetLabelList(@PathVariable String dataSetId) {
+    public R<List<LabelEntity>> queryDataSetLabelList(@PathVariable String dataSetId) {
         List<LabelEntity> labelList = datasetLabelService.getLabelByDatasetId(dataSetId);
         return R.success(labelList);
+    }
+
+    @ApiOperation("通过标签id获取关联的数据集id")
+    @GetMapping("/queryDataSetIdList/{labelId}")
+    public R<List<String>> queryDataSetIdList(@PathVariable String labelId) {
+        List<DatasetLabelVO> datasetLabelVOList = datasetLabelService.getDatasetByLabelId(labelId);
+        List<String> dataSetIdList = datasetLabelVOList.stream().map(DatasetLabelVO::getId).collect(Collectors.toList());
+        return R.success(dataSetIdList);
     }
 
     @ApiOperation("通过数据集id和标签id解除标签")

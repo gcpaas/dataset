@@ -35,7 +35,8 @@ public class DatasetSearchDTO extends SearchDTO {
     @ApiModelProperty(value = "关联标签id列表")
     private List<String> labelIds;
 
-
+    @ApiModelProperty(value = "数据集id列表")
+    private List<String> datasetIds;
 
 
 

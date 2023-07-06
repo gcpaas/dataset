@@ -63,6 +63,9 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
         queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getDatasetType()), DatasetEntity::getDatasetType, searchDTO.getDatasetType());
         queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getModuleCode()), DatasetEntity::getModuleCode, searchDTO.getModuleCode());
         queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getSourceId()), DatasetEntity::getSourceId, searchDTO.getSourceId());
+        if (searchDTO.getDatasetIds() != null && searchDTO.getDatasetIds().size() > 0) {
+            queryWrapper.in(DatasetEntity::getId, searchDTO.getDatasetIds());
+        }
         queryWrapper.orderByDesc(DatasetEntity::getUpdateDate);
         return queryWrapper;
     }
