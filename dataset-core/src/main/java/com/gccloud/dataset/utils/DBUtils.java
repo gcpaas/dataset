@@ -12,8 +12,8 @@ import com.gccloud.common.vo.PageVO;
 import com.gccloud.dataset.constant.DatasetConstant;
 import com.gccloud.dataset.dto.DatasetParamDTO;
 import com.gccloud.dataset.entity.DatasourceEntity;
-import com.gccloud.dataset.vo.DbDataVO;
 import com.gccloud.dataset.vo.DatasetInfoVO;
+import com.gccloud.dataset.vo.DbDataVO;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import oracle.jdbc.internal.OracleTypes;
@@ -22,7 +22,10 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.sql.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -33,6 +36,13 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Slf4j
 public class DBUtils {
+
+
+    /**
+     * 为避免处理存储过程返回结果集时，数据量过大导致内存溢出，限制最大返回数据量
+     * TODO 迁移到配置文件
+     */
+    private static final Integer STORED_PROCEDURE_MAX_HINT = 2000;
 
 
     /**
@@ -56,18 +66,19 @@ public class DBUtils {
         dataVO.setStructure(structure);
         try {
             CallableStatement proc;
-            proc = connection.prepareCall(procedure);
-            if (DatasetConstant.DatasourceType.ORACLE.equals(datasource.getSourceType())) {
+            // 使用可滚动的结果集
+            proc = connection.prepareCall(procedure, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+            if (DatasetConstant.DatasourceType.ORACLE.equalsIgnoreCase(datasource.getSourceType())) {
                 // oracle需要注册返回参数
                 proc.registerOutParameter(1, OracleTypes.CURSOR);
             }
-            if (DatasetConstant.DatasourceType.POSTGRESQL.equals(datasource.getSourceType())) {
+            if (DatasetConstant.DatasourceType.POSTGRESQL.equalsIgnoreCase(datasource.getSourceType())) {
                 // postgresql需要注册返回参数
                 proc.registerOutParameter(1, Types.OTHER);
             }
             proc.execute();
             ResultSet rs;
-            if (DatasetConstant.DatasourceType.ORACLE.equals(datasource.getSourceType()) || DatasetConstant.DatasourceType.POSTGRESQL.equals(datasource.getSourceType())) {
+            if (DatasetConstant.DatasourceType.ORACLE.equalsIgnoreCase(datasource.getSourceType()) || DatasetConstant.DatasourceType.POSTGRESQL.equals(datasource.getSourceType())) {
                 // oracle和postgresql需要通过返回参数获取结果集
                 rs = (ResultSet) proc.getObject(1);
             } else {
@@ -83,37 +94,108 @@ public class DBUtils {
                 structure.add(structureMap);
             }
             // 获取总数
-            int totalSize;
-            // 获取总数
+            int totalSize = 0;
+            // 检查结果集类型，用于判断是否支持滚动
+            int resultSetType = rs.getType();
+            // 是否支持滚动
+            boolean isScroll = resultSetType == ResultSet.TYPE_SCROLL_INSENSITIVE || resultSetType == ResultSet.TYPE_SCROLL_SENSITIVE;
+            // 处理分页
+            boolean isPage = current != null && size != null;
+            if (!isPage) {
+                // 不分页
+                int resultCount = 0;
+                // 遍历结果集
+                while (rs.next()) {
+                    resultCount++;
+                    if (resultCount > STORED_PROCEDURE_MAX_HINT) {
+                        // 到达最大限制，结束
+                        break;
+                    }
+                    // 获取数据
+                    Map<String, Object> map = new HashMap<>(columnCount);
+                    for (int i = 1; i <= columnCount; i++) {
+                        map.put(metaData.getColumnName(i), rs.getObject(i));
+                    }
+                    data.add(map);
+                }
+                return dataVO;
+            }
+            if (!isScroll) {
+                // 分页但不支持滚动
+                PageVO<Map<String, Object>> pageData = new PageVO<>();
+                pageData.setTotalCount(0);
+                pageData.setTotalPage(0);
+                pageData.setCurrent(current);
+                pageData.setSize(size);
+                dataVO.setPageData(pageData);
+                // 检查分页结尾是否超过限制
+                if (current * size > STORED_PROCEDURE_MAX_HINT) {
+                    // 超过限制，不处理
+                    log.warn("分页数据位置超过最大限制，无法处理:" + STORED_PROCEDURE_MAX_HINT);
+                    return dataVO;
+                }
+                int resultCount = 0;
+                int start = (current - 1) * size;
+                // 遍历结果集
+                while (rs.next()) {
+                    resultCount++;
+                    if (resultCount > STORED_PROCEDURE_MAX_HINT) {
+                        // 到达最大限制，结束
+                        break;
+                    }
+                    if (resultCount < start) {
+                        // 未到达分页起始位置，跳过
+                        continue;
+                    }
+                    if (resultCount == start + size) {
+                        // 到达分页结尾，跳过
+                        continue;
+                    }
+                    // 获取数据
+                    Map<String, Object> map = new HashMap<>(columnCount);
+                    for (int i = 1; i <= columnCount; i++) {
+                        map.put(metaData.getColumnName(i), rs.getObject(i));
+                    }
+                    data.add(map);
+                }
+                totalSize = resultCount;
+                pageData.setTotalCount(totalSize);
+                pageData.setTotalPage(totalSize % size == 0 ? totalSize / size : totalSize / size + 1);
+                pageData.setList(data);
+                return dataVO;
+            }
+            // 分页且支持滚动
+            // 先获取总数
             // 将游标移动到最后一行
             rs.last();
             // 获取最后一行行号，即总数
             totalSize = rs.getRow();
             // 将游标移动到第一行之前，即准备遍历
             rs.beforeFirst();
-            // 处理分页
-            boolean isPage = current != null && size != null;
-            if (isPage) {
-                int start = (current - 1) * size;
-                if (start > totalSize) {
-                    // 超过总数，返回空
-                    PageVO<Map<String, Object>> pageData = new PageVO<>();
-                    pageData.setTotalCount(totalSize);
-                    pageData.setTotalPage(totalSize % size == 0 ? totalSize / size : totalSize / size + 1);
-                    pageData.setCurrent(current);
-                    pageData.setSize(size);
-                    dataVO.setPageData(pageData);
-                    return dataVO;
-                }
-                // 将游标移动到分页开始位置
-                rs.absolute((current - 1) * size);
+            if (size > STORED_PROCEDURE_MAX_HINT) {
+                // 分页大小超过最大限制，使用最大限制
+                size = STORED_PROCEDURE_MAX_HINT;
+                log.warn("分页大小超过最大限制，使用最大限制数:" + STORED_PROCEDURE_MAX_HINT);
             }
+            int start = (current - 1) * size;
+            if (start > totalSize) {
+                // 超过总数，返回空
+                PageVO<Map<String, Object>> pageData = new PageVO<>();
+                pageData.setTotalCount(totalSize);
+                pageData.setTotalPage(totalSize % size == 0 ? totalSize / size : totalSize / size + 1);
+                pageData.setCurrent(current);
+                pageData.setSize(size);
+                dataVO.setPageData(pageData);
+                return dataVO;
+            }
+            // 将游标移动到分页开始位置
+            rs.absolute((current - 1) * size);
             // 计数
             int resultCount = 0;
             // 遍历结果集
             while (rs.next()) {
                 resultCount++;
-                if (isPage && resultCount > size) {
+                if (resultCount > size) {
                     // 到达分页size，结束
                     break;
                 }
@@ -125,15 +207,13 @@ public class DBUtils {
                 data.add(map);
             }
             // 设置分页信息
-            if (isPage) {
-                PageVO<Map<String, Object>> pageData = new PageVO<>();
-                pageData.setTotalCount(totalSize);
-                pageData.setTotalPage(totalSize % size == 0 ? totalSize / size : totalSize / size + 1);
-                pageData.setCurrent(current);
-                pageData.setSize(size);
-                pageData.setList(data);
-                dataVO.setPageData(pageData);
-            }
+            PageVO<Map<String, Object>> pageData = new PageVO<>();
+            pageData.setTotalCount(totalSize);
+            pageData.setTotalPage(totalSize % size == 0 ? totalSize / size : totalSize / size + 1);
+            pageData.setCurrent(current);
+            pageData.setSize(size);
+            pageData.setList(data);
+            dataVO.setPageData(pageData);
         } catch (Exception ex) {
             log.error("存储过程执行失败 ，{}", ex.getMessage());
             throw new GlobalException(ex.getMessage());

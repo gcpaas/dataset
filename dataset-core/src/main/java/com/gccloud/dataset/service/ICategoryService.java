@@ -55,9 +55,10 @@ public interface ICategoryService extends ISuperService<CategoryEntity> {
      * @param name
      * @param id
      * @param moduleCode
+     * @param type
      * @return
      */
-    boolean checkNameRepeat(String name, String id, String moduleCode);
+    boolean checkNameRepeat(String name, String id, String moduleCode, String type);
 
 
 }

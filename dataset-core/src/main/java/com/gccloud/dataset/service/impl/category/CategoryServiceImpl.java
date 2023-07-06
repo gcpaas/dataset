@@ -66,7 +66,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
     @Override
     public String add(CategoryEntity entity) {
-        boolean repeat = this.checkNameRepeat(entity.getName(), entity.getId(), entity.getModuleCode());
+        boolean repeat = this.checkNameRepeat(entity.getName(), entity.getId(), entity.getModuleCode(), entity.getType());
         if (repeat) {
             throw new GlobalException("节点名称重复");
         }
@@ -88,7 +88,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
     @Override
     public void update(CategoryEntity entity) {
-        boolean repeat = this.checkNameRepeat(entity.getName(), entity.getId(), entity.getModuleCode());
+        boolean repeat = this.checkNameRepeat(entity.getName(), entity.getId(), entity.getModuleCode(), entity.getType());
         if (repeat) {
             throw new GlobalException("节点名称重复");
         }
@@ -107,10 +107,11 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
     }
 
     @Override
-    public boolean checkNameRepeat(String name, String id, String moduleCode) {
+    public boolean checkNameRepeat(String name, String id, String moduleCode, String type) {
         LambdaQueryWrapper<CategoryEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(CategoryEntity::getName, name);
         queryWrapper.eq(StringUtils.isNotBlank(moduleCode), CategoryEntity::getModuleCode, moduleCode);
+        queryWrapper.eq(StringUtils.isNotBlank(type), CategoryEntity::getType, type);
         queryWrapper.ne(StringUtils.isNotBlank(id), CategoryEntity::getId, id);
         int count = this.count(queryWrapper);
         return count > 0;
