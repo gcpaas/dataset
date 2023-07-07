@@ -75,6 +75,8 @@ public class StoredProcedureDataSetServiceImpl extends ServiceImpl<DatasetDao, D
         StoredProcedureDataSetConfig config = (StoredProcedureDataSetConfig) dataset.getConfig();
         // 存储过程
         String sqlProcess = config.getSqlProcess();
+        // 脚本预处理
+        sqlProcess = paramsClient.handleScript(dataset.getDatasetType(), sqlProcess);
         // 参数预处理
         params = paramsClient.handleParams(params);
         // 参数替换
@@ -112,6 +114,8 @@ public class StoredProcedureDataSetServiceImpl extends ServiceImpl<DatasetDao, D
         StoredProcedureDataSetConfig config = (StoredProcedureDataSetConfig) dataset.getConfig();
         // 存储过程
         String sqlProcess = config.getSqlProcess();
+        // 脚本预处理
+        sqlProcess = paramsClient.handleScript(dataset.getDatasetType(), sqlProcess);
         // 参数预处理
         List<DatasetParamDTO> paramsList = paramsClient.handleParams(finalParams);
         // 参数替换
@@ -130,6 +134,8 @@ public class StoredProcedureDataSetServiceImpl extends ServiceImpl<DatasetDao, D
             throw new GlobalException("存储过程执行语句不能为空");
         }
         List<DatasetParamDTO> params = executeDTO.getParams();
+        // 脚本预处理
+        sqlProcess = paramsClient.handleScript(executeDTO.getDataSetType(), sqlProcess);
         // 参数预处理
         params = paramsClient.handleParams(params);
         // 参数替换

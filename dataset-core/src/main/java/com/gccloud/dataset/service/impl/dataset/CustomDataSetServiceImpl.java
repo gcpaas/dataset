@@ -77,6 +77,8 @@ public class CustomDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
         }
         CustomDataSetConfig config = (CustomDataSetConfig) entity.getConfig();
         String sql = config.getSqlProcess();
+        // 脚本预处理
+        sql = paramsClient.handleScript(entity.getDatasetType(), sql);
         // 参数预处理
         params = paramsClient.handleParams(params);
         // 参数替换
