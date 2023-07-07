@@ -14,9 +14,10 @@ public interface IDatasetPermissionService {
     /**
      * 根据权限过滤
      * @param allId 全部的数据集id
+     * @param datasetTypeList 数据集类型列表
      * @return 当前用户有权限的数据集id
      */
-    List<String> filterByPermission(List<String> allId);
+    List<String> filterByPermission(List<String> allId, List<String> datasetTypeList);
 
     /**
      * 数据集新增后的权限处理

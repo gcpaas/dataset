@@ -32,7 +32,7 @@ public interface DatasetLabelDao extends BaseMapper<DatasetLabelEntity> {
      * @param datasetId
      * @return
      */
-    @Select("SELECT l.id as id, l.name as name FROM ds_label l LEFT JOIN ds_dataset_label r ON l.id = r.label_id WHERE r.dataset_id = #{datasetId}")
+    @Select("SELECT l.id as id, l.label_name as labelName FROM ds_label l LEFT JOIN ds_dataset_label r ON l.id = r.label_id WHERE r.dataset_id = #{datasetId}")
     List<LabelEntity> getLabelByDatasetId(String datasetId);
 
 }

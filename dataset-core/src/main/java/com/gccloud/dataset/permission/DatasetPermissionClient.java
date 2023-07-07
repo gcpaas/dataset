@@ -31,9 +31,9 @@ public class DatasetPermissionClient {
      * @param allId 全部的数据集id
      * @return 当前用户有权限的数据集id
      */
-    public List<String> filterByPermission(List<String> allId) {
+    public List<String> filterByPermission(List<String> allId, List<String> datasetTypeList) {
         if (permissionService != null) {
-            return permissionService.filterByPermission(allId);
+            return permissionService.filterByPermission(allId, datasetTypeList);
         }
         return allId;
     }

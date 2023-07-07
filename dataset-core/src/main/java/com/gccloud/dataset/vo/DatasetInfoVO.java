@@ -1,6 +1,7 @@
 package com.gccloud.dataset.vo;
 
 import com.gccloud.dataset.dto.DatasetParamDTO;
+import com.gccloud.dataset.entity.LabelEntity;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
@@ -46,6 +47,8 @@ public class DatasetInfoVO {
     @ApiModelProperty(value = "参数配置信息")
     private List<DatasetParamDTO> params;
 
+    @ApiModelProperty(value = "关联标签列表")
+    private List<LabelEntity> labelList;
 
     /**
      * 数据集字段信息:字段名称

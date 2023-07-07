@@ -24,7 +24,7 @@ public class DatasetSearchDTO extends SearchDTO {
     private String typeId;
 
     @ApiModelProperty(value = "数据集类型")
-    private String datasetType;
+    private List<String> datasetType;
 
     @ApiModelProperty(value = "模块编码")
     private String moduleCode;

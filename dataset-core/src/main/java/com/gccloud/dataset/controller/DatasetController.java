@@ -8,9 +8,9 @@ import com.gccloud.dataset.dto.ExecuteDTO;
 import com.gccloud.dataset.dto.TestExecuteDTO;
 import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.DatasourceEntity;
+import com.gccloud.dataset.entity.LabelEntity;
 import com.gccloud.dataset.service.IBaseDataSetService;
 import com.gccloud.dataset.service.IDatasetLabelService;
-import com.gccloud.dataset.service.ILabelService;
 import com.gccloud.dataset.service.factory.DataSetServiceFactory;
 import com.gccloud.dataset.service.impl.dataset.BaseDatasetServiceImpl;
 import com.gccloud.dataset.service.impl.datasource.BaseDatasourceServiceImpl;
@@ -134,6 +134,8 @@ public class DatasetController {
     public R<DatasetInfoVO> getDatasetInfo(@PathVariable("id") String id) {
         IBaseDataSetService dataSetService = dataSetServiceFactory.buildById(id);
         DatasetInfoVO infoVO = dataSetService.getInfoById(id);
+        List<LabelEntity> labels = datasetLabelService.getLabelByDatasetId(id);
+        infoVO.setLabelList(labels);
         return R.success(infoVO);
     }
 

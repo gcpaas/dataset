@@ -14,6 +14,7 @@ import com.gccloud.dataset.vo.DataVO;
 import com.gccloud.dataset.vo.DatasetInfoVO;
 import com.github.benmanes.caffeine.cache.AsyncCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -60,7 +61,7 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
         LambdaQueryWrapper<DatasetEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.like(StringUtils.isNotBlank(searchDTO.getName()), DatasetEntity::getName, searchDTO.getName());
         queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getTypeId()), DatasetEntity::getTypeId, searchDTO.getTypeId());
-        queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getDatasetType()), DatasetEntity::getDatasetType, searchDTO.getDatasetType());
+        queryWrapper.in(CollectionUtils.isNotEmpty(searchDTO.getDatasetType()), DatasetEntity::getDatasetType, searchDTO.getDatasetType());
         queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getModuleCode()), DatasetEntity::getModuleCode, searchDTO.getModuleCode());
         queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getSourceId()), DatasetEntity::getSourceId, searchDTO.getSourceId());
         if (searchDTO.getDatasetIds() != null && searchDTO.getDatasetIds().size() > 0) {

@@ -14,6 +14,7 @@ import com.gccloud.dataset.service.impl.dataset.BaseDatasetServiceImpl;
 import com.gccloud.dataset.service.impl.datasource.BaseDatasourceServiceImpl;
 import com.gccloud.dataset.vo.FieldInfoVO;
 import com.gccloud.dataset.vo.TableInfoVO;
+import com.google.common.collect.Lists;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang3.StringUtils;
@@ -107,7 +108,7 @@ public class DatasourceController {
         IBaseDatasourceService datasourceService = datasourceServiceFactory.build(datasourceEntity.getSourceType());
         List<TableInfoVO> tableList = datasourceService.getTableList(datasourceEntity);
         DatasetSearchDTO searchDTO = new DatasetSearchDTO();
-        searchDTO.setDatasetType(DatasetConstant.DataSetType.ORIGINAL);
+        searchDTO.setDatasetType(Lists.newArrayList(DatasetConstant.DataSetType.ORIGINAL));
         searchDTO.setSourceId(sourceId);
         List<DatasetEntity> originalList = datasetService.getList(searchDTO);
         List<String> tableNameList = originalList.stream().map((dataset) -> {
@@ -133,7 +134,7 @@ public class DatasourceController {
         IBaseDatasourceService datasourceService = datasourceServiceFactory.build(datasourceEntity.getSourceType());
         List<TableInfoVO> viewList = datasourceService.getViewList(datasourceEntity);
         DatasetSearchDTO searchDTO = new DatasetSearchDTO();
-        searchDTO.setDatasetType(DatasetConstant.DataSetType.ORIGINAL);
+        searchDTO.setDatasetType(Lists.newArrayList(DatasetConstant.DataSetType.ORIGINAL));
         searchDTO.setSourceId(sourceId);
         List<DatasetEntity> originalList = datasetService.getList(searchDTO);
         List<String> tableNameList = originalList.stream().map((dataset) -> {

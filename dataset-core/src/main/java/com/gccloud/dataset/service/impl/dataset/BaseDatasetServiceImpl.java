@@ -14,6 +14,7 @@ import com.gccloud.dataset.service.IBaseDataSetService;
 import com.gccloud.dataset.service.ICategoryService;
 import com.gccloud.dataset.vo.DataVO;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
@@ -50,7 +51,7 @@ public class BaseDatasetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
         List<DatasetEntity> datasetList = this.list(queryWrapper);
         List<String> datasetIdList = datasetList.stream().map(DatasetEntity::getId).collect(Collectors.toList());
         // 调用权限服务过滤数据集id列表
-        List<String> filterIdList = datasetPermissionClient.filterByPermission(datasetIdList);
+        List<String> filterIdList = datasetPermissionClient.filterByPermission(datasetIdList, searchDTO.getDatasetType());
         // 查询数据集列表
         LambdaQueryWrapper<DatasetEntity> wrapper = new LambdaQueryWrapper<>();
         wrapper.in(SuperEntity::getId, filterIdList);
@@ -75,7 +76,10 @@ public class BaseDatasetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
         if (start > datasetIdList.size()) {
             return new PageVO<>();
         }
-        List<String> filterIds = datasetPermissionClient.filterByPermission(datasetIdList);
+        List<String> filterIds = datasetPermissionClient.filterByPermission(datasetIdList, searchDTO.getDatasetType());
+        if (filterIds == null || filterIds.isEmpty()) {
+            return new PageVO<>();
+        }
         if (start > filterIds.size()) {
             return new PageVO<>();
         }
@@ -147,7 +151,7 @@ public class BaseDatasetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
             allChildrenId.add(searchDTO.getTypeId());
             queryWrapper.in(DatasetEntity::getTypeId, allChildrenId);
         }
-        queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getDatasetType()), DatasetEntity::getDatasetType, searchDTO.getDatasetType());
+        queryWrapper.in(CollectionUtils.isNotEmpty(searchDTO.getDatasetType()), DatasetEntity::getDatasetType, searchDTO.getDatasetType());
         queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getModuleCode()), DatasetEntity::getModuleCode, searchDTO.getModuleCode());
         queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getSourceId()), DatasetEntity::getSourceId, searchDTO.getSourceId());
         queryWrapper.orderByDesc(DatasetEntity::getUpdateDate);
