@@ -13,6 +13,7 @@ import com.gccloud.dataset.permission.DatasetPermissionClient;
 import com.gccloud.dataset.service.IBaseDataSetService;
 import com.gccloud.dataset.service.ICategoryService;
 import com.gccloud.dataset.vo.DataVO;
+import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -52,6 +53,9 @@ public class BaseDatasetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
         List<String> datasetIdList = datasetList.stream().map(DatasetEntity::getId).collect(Collectors.toList());
         // 调用权限服务过滤数据集id列表
         List<String> filterIdList = datasetPermissionClient.filterByPermission(datasetIdList, searchDTO.getDatasetType());
+        if (filterIdList == null || filterIdList.isEmpty()) {
+            return Lists.newArrayList();
+        }
         // 查询数据集列表
         LambdaQueryWrapper<DatasetEntity> wrapper = new LambdaQueryWrapper<>();
         wrapper.in(SuperEntity::getId, filterIdList);
