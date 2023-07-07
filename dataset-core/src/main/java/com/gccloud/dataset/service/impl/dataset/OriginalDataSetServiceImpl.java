@@ -156,10 +156,9 @@ public class OriginalDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetE
     public List<DatasetEntity> getListByTableName(String tableName, String sourceId) {
         LambdaQueryWrapper<DatasetEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(DatasetEntity::getDatasetType, DatasetConstant.DataSetType.ORIGINAL);
-        // 模糊匹配数据源id
-        queryWrapper.like(DatasetEntity::getConfig, "%\"sourceId\":\"" + tableName + "\"%");
-        // 模糊匹配表名
-        queryWrapper.like(DatasetEntity::getConfig, "%\"tableName\":\"" + sourceId + "\"%");
+        queryWrapper.eq(DatasetEntity::getSourceId, sourceId);
+        // 原始数据集的code就是表名
+        queryWrapper.like(DatasetEntity::getCode, tableName);
         List<DatasetEntity> list = this.list(queryWrapper);
         // 遍历二次过滤
         list.removeIf(datasetEntity -> {

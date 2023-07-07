@@ -17,9 +17,11 @@ import com.gccloud.dataset.service.impl.datasource.BaseDatasourceServiceImpl;
 import com.gccloud.dataset.utils.DBUtils;
 import com.gccloud.dataset.vo.DataVO;
 import com.gccloud.dataset.vo.DatasetInfoVO;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -56,6 +58,9 @@ public class DatasetController {
         List<String> labelIds = searchDTO.getLabelIds();
         List<String> datasetIdList = this.filterDatasetByIdList(labelIds);
         searchDTO.setDatasetIds(datasetIdList);
+        if (CollectionUtils.isNotEmpty(labelIds) && CollectionUtils.isEmpty(datasetIdList)) {
+            return R.success(new PageVO<>());
+        }
         PageVO<DatasetEntity> page = baseDatasetService.getPage(searchDTO);
         return R.success(page);
     }
@@ -66,6 +71,9 @@ public class DatasetController {
         List<String> labelIds = searchDTO.getLabelIds();
         List<String> datasetIdList = this.filterDatasetByIdList(labelIds);
         searchDTO.setDatasetIds(datasetIdList);
+        if (CollectionUtils.isNotEmpty(labelIds) && CollectionUtils.isEmpty(datasetIdList)) {
+            return R.success(Lists.newArrayList());
+        }
         List<DatasetEntity> list = baseDatasetService.getList(searchDTO);
         return R.success(list);
     }
