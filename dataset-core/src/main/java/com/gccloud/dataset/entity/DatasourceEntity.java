@@ -35,6 +35,9 @@ public class DatasourceEntity extends SuperEntity {
     @ApiModelProperty(value = "端口")
     private Integer port;
 
+    @ApiModelProperty(value = "表名")
+    private String tableName;
+
     @ApiModelProperty(value = "用户名")
     private String username;
 

@@ -105,6 +105,11 @@
             <artifactId>guava</artifactId>
             <version>${guava.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>easyexcel</artifactId>
+            <version>2.2.11</version>
+        </dependency>
         <!--  jackson  -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

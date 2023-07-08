@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.gccloud.common.exception.GlobalException;
 import com.gccloud.common.service.ISuperService;
 import com.gccloud.common.vo.PageVO;
+import com.gccloud.dataset.dto.DatasourceDTO;
 import com.gccloud.dataset.dto.DatasourceSearchDTO;
 import com.gccloud.dataset.entity.DatasourceEntity;
 import com.gccloud.dataset.utils.DBUtils;
@@ -61,7 +62,7 @@ public interface IBaseDatasourceService extends ISuperService<DatasourceEntity> 
      * @param entity
      * @return
      */
-    default String add(DatasourceEntity entity) {
+    default String add(DatasourceDTO entity) {
         entity.setPassword(DESUtils.getEncryptString(entity.getPassword()));
         this.save(entity);
         return entity.getId();
@@ -73,7 +74,7 @@ public interface IBaseDatasourceService extends ISuperService<DatasourceEntity> 
      * @param entity
      * @return
      */
-    default void update(DatasourceEntity entity) {
+    default void update(DatasourceDTO entity) {
         if (StringUtils.isBlank(entity.getPassword())) {
             // 密码为空，不修改
             entity.setPassword(null);

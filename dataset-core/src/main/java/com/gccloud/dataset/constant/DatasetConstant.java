@@ -66,6 +66,11 @@ public interface DatasetConstant {
          */
         String CLICKHOUSE = "clickhouse";
 
+        /**
+         * excel
+         */
+        String EXCEL = "excel";
+
     }
 
     /**
