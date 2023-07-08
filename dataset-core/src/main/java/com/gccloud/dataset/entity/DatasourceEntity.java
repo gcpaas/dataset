@@ -35,6 +35,8 @@ public class DatasourceEntity extends SuperEntity {
     @ApiModelProperty(value = "端口")
     private Integer port;
 
+    // TODO 该功能未开发完，先不添加到表
+    @TableField(exist = false)
     @ApiModelProperty(value = "表名")
     private String tableName;
 
