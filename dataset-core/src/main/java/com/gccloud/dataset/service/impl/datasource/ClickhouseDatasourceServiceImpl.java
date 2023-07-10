@@ -64,7 +64,7 @@ public class ClickhouseDatasourceServiceImpl extends ServiceImpl<DatasourceDao, 
         page.setTotalPage((total + size - 1) / size);
         page.setList(pageData.getData());
         DataVO dataVO = new DataVO();
-        dataVO.setData(pageData);
+        dataVO.setData(page);
         dataVO.setStructure(pageData.getStructure());
         return dataVO;
     }
@@ -80,7 +80,7 @@ public class ClickhouseDatasourceServiceImpl extends ServiceImpl<DatasourceDao, 
         }
         // show tables的结果集中，第一列的列名是"Tables_in_数据库名"，所以这里取第一列的列名
         List<Map<String, Object>> structure = dataVO.getStructure();
-        String columnName = structure.get(0).get("name").toString();
+        String columnName = structure.get(0).get("fieldName").toString();
         for (Map<String, Object> map : data) {
             TableInfoVO tableInfoVO = new TableInfoVO();
             tableInfoVO.setName(map.get(columnName).toString());

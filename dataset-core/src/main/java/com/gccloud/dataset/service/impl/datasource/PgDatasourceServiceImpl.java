@@ -48,7 +48,8 @@ public class PgDatasourceServiceImpl extends ServiceImpl<DatasourceDao, Datasour
         String countSql = "SELECT COUNT(1) AS COUNT FROM (" + sql + ") AS t";
         log.info("数据集数据详情计算总条数 sql语句：{}", countSql);
         DbDataVO countData = DBUtils.getSqlValue(countSql, datasource);
-        Object count = countData.getData().get(0).get("COUNT");
+        // pg数据库会自动将count转为小写
+        Object count = countData.getData().get(0).get("count");
         int total = Integer.parseInt(count.toString());
         // 组装分页sql
         int start = (current - 1) * size;

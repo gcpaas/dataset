@@ -71,4 +71,13 @@ public interface IDatasetLabelService extends ISuperService<DatasetLabelEntity> 
     List<String> getDatasetIdsByLabelIds(List<String> labelIds);
 
 
+    /**
+     * 根据标签id获取数据集id列表
+     * @param labelIds 标签id列表
+     * @param allMatch 是否全部匹配，true：全部匹配，false：任意匹配
+     * @return
+     */
+    List<String> getDatasetIdsByLabelIds(List<String> labelIds, boolean allMatch);
+
+
 }

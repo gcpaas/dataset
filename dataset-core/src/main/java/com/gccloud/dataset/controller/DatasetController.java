@@ -87,7 +87,7 @@ public class DatasetController {
         if (labelIds == null || labelIds.isEmpty()) {
             return null;
         }
-        return datasetLabelService.getDatasetIdsByLabelIds(labelIds);
+        return datasetLabelService.getDatasetIdsByLabelIds(labelIds, true);
     }
 
 
