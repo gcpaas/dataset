@@ -1,7 +1,9 @@
 package com.gccloud.dataset.controller;
 
+import com.gccloud.common.permission.ApiPermission;
 import com.gccloud.common.vo.PageVO;
 import com.gccloud.common.vo.R;
+import com.gccloud.dataset.constant.DatasetConstant;
 import com.gccloud.dataset.dto.DatasetDTO;
 import com.gccloud.dataset.dto.DatasetSearchDTO;
 import com.gccloud.dataset.dto.ExecuteDTO;
@@ -54,6 +56,7 @@ public class DatasetController {
 
     @ApiOperation("分页列表")
     @GetMapping("/page")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Dataset.VIEW})
     public R<PageVO<DatasetEntity>> getPage(DatasetSearchDTO searchDTO) {
         List<String> labelIds = searchDTO.getLabelIds();
         List<String> datasetIdList = this.filterDatasetByIdList(labelIds);
@@ -67,6 +70,7 @@ public class DatasetController {
 
     @ApiOperation("列表")
     @GetMapping("/list")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Dataset.VIEW})
     public R<List<DatasetEntity>> getList(DatasetSearchDTO searchDTO) {
         List<String> labelIds = searchDTO.getLabelIds();
         List<String> datasetIdList = this.filterDatasetByIdList(labelIds);
@@ -93,6 +97,7 @@ public class DatasetController {
 
     @ApiOperation("新增")
     @PostMapping("/add")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Dataset.ADD})
     public R<String> add(@RequestBody DatasetDTO datasetDTO) {
         IBaseDataSetService dataSetService = dataSetServiceFactory.build(datasetDTO.getDatasetType());
         String id = dataSetService.add(datasetDTO);
@@ -107,6 +112,7 @@ public class DatasetController {
 
     @ApiOperation("修改")
     @PostMapping("/update")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Dataset.UPDATE})
     public R<Void> update(@RequestBody DatasetDTO datasetDTO) {
         IBaseDataSetService dataSetService = dataSetServiceFactory.build(datasetDTO.getDatasetType());
         dataSetService.update(datasetDTO);
@@ -122,6 +128,7 @@ public class DatasetController {
 
     @ApiOperation("删除")
     @PostMapping("/delete/{id}")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Dataset.DELETE})
     public R<Void> delete(@PathVariable("id") String id) {
         IBaseDataSetService dataSetService = dataSetServiceFactory.buildById(id);
         dataSetService.delete(id);
@@ -131,6 +138,7 @@ public class DatasetController {
 
     @ApiOperation("详情")
     @GetMapping("/info/{id}")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Dataset.VIEW})
     public R<DatasetEntity> info(@PathVariable("id") String id) {
         IBaseDataSetService dataSetService = dataSetServiceFactory.buildById(id);
         DatasetEntity datasetEntity = dataSetService.getById(id);
@@ -139,6 +147,7 @@ public class DatasetController {
 
     @ApiOperation("数据集详情")
     @GetMapping("/datasetInfo/{id}")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Dataset.VIEW})
     public R<DatasetInfoVO> getDatasetInfo(@PathVariable("id") String id) {
         IBaseDataSetService dataSetService = dataSetServiceFactory.buildById(id);
         DatasetInfoVO infoVO = dataSetService.getInfoById(id);
@@ -149,6 +158,7 @@ public class DatasetController {
 
     @ApiOperation("数据集名称重复判断")
     @PostMapping("/checkRepeat")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Dataset.VIEW})
     public R<Boolean> checkRepeat(@RequestBody DatasetEntity datasetEntity) {
         boolean nameRepeat = baseDatasetService.checkNameRepeat(datasetEntity.getId(), datasetEntity.getName(), datasetEntity.getModuleCode());
         return R.success(nameRepeat);
@@ -156,6 +166,7 @@ public class DatasetController {
 
     @ApiOperation("数据集执行测试")
     @PostMapping("/execute/test")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Dataset.EXECUTE})
     public R<Object> execute(@RequestBody TestExecuteDTO executeDTO) {
         if (StringUtils.isBlank(executeDTO.getDataSetType())) {
             return R.error("数据集类型不能为空");
@@ -177,6 +188,7 @@ public class DatasetController {
 
     @ApiOperation("数据集执行")
     @PostMapping("/execute")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Dataset.EXECUTE})
     public R<Object> execute(@RequestBody ExecuteDTO executeDTO) {
         if (StringUtils.isBlank(executeDTO.getDataSetType()) && StringUtils.isBlank(executeDTO.getDataSetId())) {
             return R.error("数据集id不能为空");

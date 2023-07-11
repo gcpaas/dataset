@@ -167,4 +167,94 @@ public interface DatasetConstant {
 
     }
 
+
+    /**
+     * 接口权限标识
+     */
+    interface Permission {
+
+        /**
+         * 数据源
+         */
+        interface Datasource {
+            /**
+             * 数据源的查询接口权限
+             */
+            String VIEW = "datasource:view";
+
+            /**
+             * 数据源的添加接口权限
+             */
+            String ADD = "datasource:add";
+
+            /**
+             * 数据源的编辑接口权限
+             */
+            String UPDATE = "datasource:update";
+
+            /**
+             * 数据源的删除接口权限
+             */
+            String DELETE = "datasource:delete";
+
+            /**
+             * 数据源的测试接口权限
+             */
+            String TEST = "datasource:test";
+        }
+
+        /**
+         * 数据集
+         */
+        interface Dataset {
+
+            /**
+             * 数据集的查询接口权限
+             */
+            String VIEW = "dataset:view";
+
+            /**
+             * 数据集的添加接口权限
+             */
+            String ADD = "dataset:add";
+
+            /**
+             * 数据集的编辑接口权限
+             */
+            String UPDATE = "dataset:update";
+
+
+            /**
+             * 数据集的删除接口权限
+             */
+            String DELETE = "dataset:delete";
+
+            /**
+             * 数据集的执行（获取数据）接口权限
+             */
+            String EXECUTE = "dataset:execute";
+
+            /**
+             * 数据集的分类树相关查询接口权限
+             */
+            String CATEGORY_VIEW = "dataset:category";
+
+            /**
+             * 数据集的分类树相关操作接口权限（增删改）
+             */
+            String CATEGORY_EDIT = "dataset:category:edit";
+
+            /**
+             * 数据集标签相关查询接口权限
+             */
+            String LABEL_VIEW = "dataset:label";
+
+            /**
+             * 数据集标签相关操作接口权限（增删改）
+             */
+            String LABEL_EDIT = "dataset:label:edit";
+        }
+
+    }
+
 }

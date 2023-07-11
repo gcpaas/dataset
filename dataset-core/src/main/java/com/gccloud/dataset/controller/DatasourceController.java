@@ -4,6 +4,7 @@ import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.event.AnalysisEventListener;
 import com.alibaba.excel.exception.ExcelAnalysisStopException;
+import com.gccloud.common.permission.ApiPermission;
 import com.gccloud.common.vo.PageVO;
 import com.gccloud.common.vo.R;
 import com.gccloud.dataset.constant.DatasetConstant;
@@ -62,6 +63,7 @@ public class DatasourceController {
 
     @ApiOperation("分页列表")
     @GetMapping("/page")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Datasource.VIEW})
     public R<PageVO<DatasourceEntity>> getPage(DatasourceSearchDTO searchDTO) {
         PageVO<DatasourceEntity> page = baseDatasourceService.getPage(searchDTO);
         return R.success(page);
@@ -70,6 +72,7 @@ public class DatasourceController {
 
     @ApiOperation("列表")
     @GetMapping("/list")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Datasource.VIEW})
     public R<List<DatasourceEntity>> getList(DatasourceSearchDTO searchDTO) {
         List<DatasourceEntity> list = baseDatasourceService.getList(searchDTO);
         return R.success(list);
@@ -77,6 +80,7 @@ public class DatasourceController {
 
     @ApiOperation("新增")
     @PostMapping("/add")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Datasource.ADD})
     public R<String> add(@RequestBody DatasourceDTO datasource) {
         IBaseDatasourceService datasourceService = datasourceServiceFactory.build(datasource.getSourceType());
         String id = datasourceService.add(datasource);
@@ -85,6 +89,7 @@ public class DatasourceController {
 
     @ApiOperation("修改")
     @PostMapping("/update")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Datasource.UPDATE})
     public R<Void> update(@RequestBody DatasourceDTO datasource) {
         IBaseDatasourceService datasourceService = datasourceServiceFactory.build(datasource.getSourceType());
         datasourceService.update(datasource);
@@ -93,6 +98,7 @@ public class DatasourceController {
 
     @ApiOperation("删除")
     @PostMapping("/delete/{id}")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Datasource.DELETE})
     public R<Void> delete(@PathVariable String id) {
         baseDatasourceService.delete(id);
         return R.success();
@@ -100,6 +106,7 @@ public class DatasourceController {
 
     @ApiOperation("测试连接")
     @PostMapping("/testConnect")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Datasource.TEST})
     public R<String> testConnect(@RequestBody DatasourceEntity datasourceEntity) {
         if (StringUtils.isBlank(datasourceEntity.getSourceType())) {
             return R.error("数据源类型不能为空");
@@ -111,6 +118,7 @@ public class DatasourceController {
 
     @ApiOperation("数据源名称重复判断")
     @PostMapping("/checkRepeat")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Datasource.VIEW})
     public R<Boolean> checkRepeat(@RequestBody DatasourceEntity datasource) {
         Boolean flag = baseDatasourceService.checkNameRepeat(datasource.getId(), datasource.getSourceName(), datasource.getModuleCode());
         return R.success(flag);
@@ -118,6 +126,7 @@ public class DatasourceController {
 
     @ApiOperation("查询数据源下的表")
     @GetMapping("/getTableList/{sourceId}")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Datasource.VIEW})
     public R<List<TableInfoVO>> getTableList(@PathVariable String sourceId) {
         DatasourceEntity datasourceEntity = baseDatasourceService.getById(sourceId);
         if (datasourceEntity == null) {
@@ -144,6 +153,7 @@ public class DatasourceController {
 
     @ApiOperation("查询数据源下的视图")
     @GetMapping("/getViewList/{sourceId}")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Datasource.VIEW})
     public R<List<TableInfoVO>> getViewList(@PathVariable String sourceId) {
         DatasourceEntity datasourceEntity = baseDatasourceService.getById(sourceId);
         if (datasourceEntity == null) {
@@ -170,6 +180,7 @@ public class DatasourceController {
 
     @ApiOperation("查询数据源下表的字段信息")
     @GetMapping("/getFieldList/table/{sourceId}/{tableName}")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Datasource.VIEW})
     public R<List<FieldInfoVO>> getTableFieldList(@PathVariable String sourceId, @PathVariable String tableName) {
         DatasourceEntity datasourceEntity = baseDatasourceService.getById(sourceId);
         if (datasourceEntity == null) {
@@ -182,6 +193,7 @@ public class DatasourceController {
 
     @ApiOperation("查询数据源下表的字段信息")
     @GetMapping("/getFieldList/view/{sourceId}/{tableName}")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Datasource.VIEW})
     public R<List<FieldInfoVO>> getViewFieldList(@PathVariable String sourceId, @PathVariable String tableName) {
         DatasourceEntity datasourceEntity = baseDatasourceService.getById(sourceId);
         if (datasourceEntity == null) {

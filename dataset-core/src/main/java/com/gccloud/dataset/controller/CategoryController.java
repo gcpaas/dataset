@@ -1,6 +1,8 @@
 package com.gccloud.dataset.controller;
 
+import com.gccloud.common.permission.ApiPermission;
 import com.gccloud.common.vo.R;
+import com.gccloud.dataset.constant.DatasetConstant;
 import com.gccloud.dataset.dto.CategorySearchDTO;
 import com.gccloud.dataset.entity.CategoryEntity;
 import com.gccloud.dataset.service.ICategoryService;
@@ -29,6 +31,7 @@ public class CategoryController {
 
     @ApiOperation("依据类型查询对应的种类树")
     @GetMapping("/queryTreeList")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Dataset.CATEGORY_VIEW})
     public R<List<CategoryVO>> queryTreeList(CategorySearchDTO searchDTO) {
         List<CategoryVO> tree = categoryService.getTree(searchDTO);
         return R.success(tree);
@@ -36,6 +39,7 @@ public class CategoryController {
 
     @ApiOperation("新增")
     @PostMapping("/add")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Dataset.CATEGORY_EDIT})
     public R<String> add(@RequestBody CategoryEntity categoryEntity) {
         String id = categoryService.add(categoryEntity);
         return R.success(id);
@@ -43,6 +47,7 @@ public class CategoryController {
 
     @ApiOperation("修改")
     @PostMapping("/update")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Dataset.CATEGORY_EDIT})
     public R<Void> update(@RequestBody CategoryEntity categoryEntity) {
         categoryService.update(categoryEntity);
         return R.success();
@@ -51,6 +56,7 @@ public class CategoryController {
 
     @ApiOperation("删除")
     @PostMapping("/delete/{id}")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Dataset.CATEGORY_EDIT})
     public R<Void> delete(@PathVariable String id) {
         categoryService.delete(id);
         return R.success();
