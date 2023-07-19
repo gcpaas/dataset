@@ -116,4 +116,15 @@ public class DatasetLabelServiceImpl extends ServiceImpl<DatasetLabelDao, Datase
         List<String> datasetIds = list.stream().map(DatasetLabelEntity::getDatasetId).collect(Lists::newArrayList, List::add, List::addAll);
         return datasetIds;
     }
+
+    @Override
+    public List<String> getLabelIdsByDatasetId(String datasetId) {
+        LambdaQueryWrapper<DatasetLabelEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.select(DatasetLabelEntity::getLabelId);
+        wrapper.eq(DatasetLabelEntity::getDatasetId, datasetId);
+        List<DatasetLabelEntity> list = this.list(wrapper);
+        // 取id，且去重
+        List<String> labelIds = list.stream().map(DatasetLabelEntity::getLabelId).distinct().collect(Lists::newArrayList, List::add, List::addAll);
+        return labelIds;
+    }
 }

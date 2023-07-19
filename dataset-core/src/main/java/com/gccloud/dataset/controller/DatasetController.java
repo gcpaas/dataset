@@ -1,6 +1,7 @@
 package com.gccloud.dataset.controller;
 
 import com.gccloud.common.permission.ApiPermission;
+import com.gccloud.common.utils.BeanConvertUtils;
 import com.gccloud.common.vo.PageVO;
 import com.gccloud.common.vo.R;
 import com.gccloud.dataset.constant.DatasetConstant;
@@ -19,6 +20,7 @@ import com.gccloud.dataset.service.impl.datasource.BaseDatasourceServiceImpl;
 import com.gccloud.dataset.utils.DBUtils;
 import com.gccloud.dataset.vo.DataVO;
 import com.gccloud.dataset.vo.DatasetInfoVO;
+import com.gccloud.dataset.vo.DatasetVO;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.swagger.annotations.Api;
@@ -57,7 +59,7 @@ public class DatasetController {
     @ApiOperation("分页列表")
     @GetMapping("/page")
     @ApiPermission(permissions = {DatasetConstant.Permission.Dataset.VIEW})
-    public R<PageVO<DatasetEntity>> getPage(DatasetSearchDTO searchDTO) {
+    public R<PageVO<DatasetVO>> getPage(DatasetSearchDTO searchDTO) {
         List<String> labelIds = searchDTO.getLabelIds();
         List<String> datasetIdList = this.filterDatasetByIdList(labelIds);
         searchDTO.setDatasetIds(datasetIdList);
@@ -65,7 +67,14 @@ public class DatasetController {
             return R.success(new PageVO<>());
         }
         PageVO<DatasetEntity> page = baseDatasetService.getPage(searchDTO);
-        return R.success(page);
+        PageVO<DatasetVO> pageVO = BeanConvertUtils.convert(page, PageVO.class);
+        List<DatasetVO> voList = BeanConvertUtils.convert(page.getList(), DatasetVO.class);
+        for (DatasetVO datasetVO : voList) {
+            List<String> labelIdList = datasetLabelService.getLabelIdsByDatasetId(datasetVO.getId());
+            datasetVO.setLabelIds(labelIdList);
+        }
+        pageVO.setList(voList);
+        return R.success(pageVO);
     }
 
     @ApiOperation("列表")
