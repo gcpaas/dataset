@@ -10,6 +10,7 @@ import com.gccloud.dataset.entity.DatasourceEntity;
 import com.gccloud.dataset.utils.DBUtils;
 import com.gccloud.dataset.utils.DESUtils;
 import com.gccloud.dataset.vo.DataVO;
+import com.gccloud.dataset.vo.DeleteCheckVO;
 import com.gccloud.dataset.vo.FieldInfoVO;
 import com.gccloud.dataset.vo.TableInfoVO;
 import org.apache.commons.lang3.StringUtils;
@@ -88,16 +89,27 @@ public interface IBaseDatasourceService extends ISuperService<DatasourceEntity> 
 
     /**
      * 删除
+     * 该方法不会检查是否被数据集引用，如果需要检查，请再删除使用deleteCheck方法
      * @param id
      * @return
      */
     default void delete(String id) {
-        // TODO 使用检查，检查是否被数据集引用
         if (StringUtils.isBlank(id)) {
             return;
         }
         this.removeById(id);
     }
+
+    /**
+     * 删除前检查
+     * 检查是否被数据集引用
+     * @param id
+     * @return
+     */
+     default DeleteCheckVO deleteCheck(String id) {
+         return new DeleteCheckVO();
+     }
+
 
     /**
      * 根据id获取

@@ -9,10 +9,12 @@ import com.gccloud.dataset.dto.DatasetParamDTO;
 import com.gccloud.dataset.dto.DatasetSearchDTO;
 import com.gccloud.dataset.dto.TestExecuteDTO;
 import com.gccloud.dataset.entity.DatasetEntity;
+import com.gccloud.dataset.extend.dataset.DatasetExtendClient;
 import com.gccloud.dataset.permission.DatasetPermissionClient;
 import com.gccloud.dataset.service.IBaseDataSetService;
 import com.gccloud.dataset.service.ICategoryService;
 import com.gccloud.dataset.vo.DataVO;
+import com.gccloud.dataset.vo.DeleteCheckVO;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -40,6 +42,9 @@ public class BaseDatasetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
 
     @Resource
     private DatasetPermissionClient datasetPermissionClient;
+
+    @Resource
+    private DatasetExtendClient extendClient;
 
     @Override
     public List<DatasetEntity> getList(DatasetSearchDTO searchDTO) {
@@ -125,6 +130,20 @@ public class BaseDatasetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
             // 删除数据集权限
             datasetPermissionClient.deletePermission(id);
         }
+    }
+
+    @Override
+    public DeleteCheckVO deleteCheck(String id) {
+        List<String> reasons = extendClient.deleteCheck(id);
+        if (reasons == null || reasons.isEmpty()) {
+            return new DeleteCheckVO();
+        }
+        // 去除空值，空白字符串或null
+        reasons.removeIf(StringUtils::isBlank);
+        DeleteCheckVO vo = new DeleteCheckVO();
+        vo.setReasons(reasons);
+        vo.setCanDelete(reasons.size() == 0);
+        return vo;
     }
 
     @Override

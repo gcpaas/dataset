@@ -19,6 +19,7 @@ import com.gccloud.dataset.service.IBaseDatasourceService;
 import com.gccloud.dataset.service.factory.DatasourceServiceFactory;
 import com.gccloud.dataset.service.impl.dataset.BaseDatasetServiceImpl;
 import com.gccloud.dataset.service.impl.datasource.BaseDatasourceServiceImpl;
+import com.gccloud.dataset.vo.DeleteCheckVO;
 import com.gccloud.dataset.vo.ExcelParseVO;
 import com.gccloud.dataset.vo.FieldInfoVO;
 import com.gccloud.dataset.vo.TableInfoVO;
@@ -102,6 +103,14 @@ public class DatasourceController {
     public R<Void> delete(@PathVariable String id) {
         baseDatasourceService.delete(id);
         return R.success();
+    }
+
+    @ApiOperation("删除前检查")
+    @PostMapping("/deleteCheck/{id}")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Datasource.DELETE})
+    public R<DeleteCheckVO> deleteCheck(@PathVariable String id) {
+        DeleteCheckVO deleteCheckVO = baseDatasourceService.deleteCheck(id);
+        return R.success(deleteCheckVO);
     }
 
     @ApiOperation("测试连接")

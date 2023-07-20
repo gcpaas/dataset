@@ -12,6 +12,7 @@ import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.config.BaseDataSetConfig;
 import com.gccloud.dataset.vo.DataVO;
 import com.gccloud.dataset.vo.DatasetInfoVO;
+import com.gccloud.dataset.vo.DeleteCheckVO;
 import com.github.benmanes.caffeine.cache.AsyncCache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.apache.commons.collections4.CollectionUtils;
@@ -106,6 +107,18 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
         this.removeById(id);
         DATASET_CACHE.synchronous().invalidate(id);
     }
+
+
+    /**
+     * 删除前检查
+     * 检查是否被引用
+     * @param id
+     * @return
+     */
+    default DeleteCheckVO deleteCheck(String id) {
+        return new DeleteCheckVO();
+    }
+
 
     /**
      * 名称重复校验

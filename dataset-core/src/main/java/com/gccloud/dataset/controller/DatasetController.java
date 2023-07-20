@@ -21,6 +21,7 @@ import com.gccloud.dataset.utils.DBUtils;
 import com.gccloud.dataset.vo.DataVO;
 import com.gccloud.dataset.vo.DatasetInfoVO;
 import com.gccloud.dataset.vo.DatasetVO;
+import com.gccloud.dataset.vo.DeleteCheckVO;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.swagger.annotations.Api;
@@ -144,6 +145,16 @@ public class DatasetController {
         datasetLabelService.deleteByDatasetId(id);
         return R.success();
     }
+
+    @ApiOperation("删除前检查")
+    @PostMapping("/deleteCheck/{id}")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Dataset.DELETE})
+    public R<DeleteCheckVO> deleteCheck(@PathVariable("id") String id) {
+        // 直接使用基础数据集服务，后续看情况是否需要改成工厂模式
+        DeleteCheckVO deleteCheckVO = baseDatasetService.deleteCheck(id);
+        return R.success(deleteCheckVO);
+    }
+
 
     @ApiOperation("详情")
     @GetMapping("/info/{id}")
