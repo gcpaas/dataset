@@ -171,17 +171,15 @@ public class DatasetController {
         if (category == null) {
             return R.success(0);
         }
-        String ids = category.getIds() + "," + typeId;
+        String ids = category.getIds() + ",";
         LambdaQueryWrapper<CategoryEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.select(CategoryEntity::getId);
         queryWrapper.likeRight(CategoryEntity::getIds, ids);
         List<CategoryEntity> list = categoryService.list(queryWrapper);
         List<String> typeIds = list.stream().map(CategoryEntity::getId).collect(Collectors.toList());
-        if (typeIds.isEmpty()) {
-            return R.success(0);
-        }
+        typeIds.add(typeId);
         LambdaQueryWrapper<DatasetEntity> datasetQueryWrapper = new LambdaQueryWrapper<>();
-        datasetQueryWrapper.in(DatasetEntity::getDatasetType, typeIds);
+        datasetQueryWrapper.in(DatasetEntity::getTypeId, typeIds);
         int count = baseDatasetService.count(datasetQueryWrapper);
         return R.success(count);
     }
