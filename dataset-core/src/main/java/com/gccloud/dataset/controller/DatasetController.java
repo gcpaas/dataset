@@ -1,5 +1,6 @@
 package com.gccloud.dataset.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.gccloud.common.permission.ApiPermission;
 import com.gccloud.common.utils.BeanConvertUtils;
 import com.gccloud.common.vo.PageVO;
@@ -9,10 +10,12 @@ import com.gccloud.dataset.dto.DatasetDTO;
 import com.gccloud.dataset.dto.DatasetSearchDTO;
 import com.gccloud.dataset.dto.ExecuteDTO;
 import com.gccloud.dataset.dto.TestExecuteDTO;
+import com.gccloud.dataset.entity.CategoryEntity;
 import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.DatasourceEntity;
 import com.gccloud.dataset.entity.LabelEntity;
 import com.gccloud.dataset.service.IBaseDataSetService;
+import com.gccloud.dataset.service.ICategoryService;
 import com.gccloud.dataset.service.IDatasetLabelService;
 import com.gccloud.dataset.service.factory.DataSetServiceFactory;
 import com.gccloud.dataset.service.impl.dataset.BaseDatasetServiceImpl;
@@ -33,6 +36,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author hongyang
@@ -55,6 +59,9 @@ public class DatasetController {
 
     @Resource
     private IDatasetLabelService datasetLabelService;
+
+    @Resource
+    private ICategoryService categoryService;
 
 
     @ApiOperation("分页列表")
@@ -154,6 +161,31 @@ public class DatasetController {
         DeleteCheckVO deleteCheckVO = baseDatasetService.deleteCheck(id);
         return R.success(deleteCheckVO);
     }
+
+
+    @ApiOperation("检查数据集分组下有多少数据集")
+    @GetMapping("/getCountByType/{typeId}")
+    @ApiPermission(permissions = {DatasetConstant.Permission.Dataset.VIEW})
+    public R<Integer> getCountByType(@PathVariable("typeId") String typeId) {
+        CategoryEntity category = categoryService.getById(typeId);
+        if (category == null) {
+            return R.success(0);
+        }
+        String ids = category.getIds() + "," + typeId;
+        LambdaQueryWrapper<CategoryEntity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.select(CategoryEntity::getId);
+        queryWrapper.likeRight(CategoryEntity::getIds, ids);
+        List<CategoryEntity> list = categoryService.list(queryWrapper);
+        List<String> typeIds = list.stream().map(CategoryEntity::getId).collect(Collectors.toList());
+        if (typeIds.isEmpty()) {
+            return R.success(0);
+        }
+        LambdaQueryWrapper<DatasetEntity> datasetQueryWrapper = new LambdaQueryWrapper<>();
+        datasetQueryWrapper.in(DatasetEntity::getDatasetType, typeIds);
+        int count = baseDatasetService.count(datasetQueryWrapper);
+        return R.success(count);
+    }
+
 
 
     @ApiOperation("详情")
