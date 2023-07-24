@@ -99,6 +99,7 @@ public class BaseDatasetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
         // 查询数据集列表
         LambdaQueryWrapper<DatasetEntity> wrapper = new LambdaQueryWrapper<>();
         wrapper.in(SuperEntity::getId, pageIds);
+        wrapper.orderByDesc(DatasetEntity::getUpdateDate);
         List<DatasetEntity> list = this.list(wrapper);
         PageVO<DatasetEntity> pageVO = new PageVO<>();
         pageVO.setCurrent(current);

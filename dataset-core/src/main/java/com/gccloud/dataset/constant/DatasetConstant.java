@@ -95,11 +95,11 @@ public interface DatasetConstant {
      */
     interface DataRepeat {
         /**
-         * 不去重
+         * 不允许重复，即去重
          */
         Integer NOT_REPEAT = 1;
         /**
-         * 默认 去重
+         * 默认 允许重复
          */
         Integer DEFAULT = 0;
     }
