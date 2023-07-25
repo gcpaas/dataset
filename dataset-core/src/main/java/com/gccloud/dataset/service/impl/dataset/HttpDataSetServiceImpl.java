@@ -10,7 +10,7 @@ import com.gccloud.dataset.dao.DatasetDao;
 import com.gccloud.dataset.dto.DatasetParamDTO;
 import com.gccloud.dataset.dto.TestExecuteDTO;
 import com.gccloud.dataset.entity.DatasetEntity;
-import com.gccloud.dataset.entity.config.ApiDataSetConfig;
+import com.gccloud.dataset.entity.config.HttpDataSetConfig;
 import com.gccloud.dataset.params.ParamsClient;
 import com.gccloud.dataset.permission.DatasetPermissionClient;
 import com.gccloud.dataset.service.IBaseDataSetService;
@@ -35,8 +35,8 @@ import java.util.stream.Collectors;
  * @date 2023/6/1 11:20
  */
 @Slf4j
-@Service(DatasetConstant.DataSetType.API)
-public class ApiDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntity> implements IBaseDataSetService {
+@Service(DatasetConstant.DataSetType.HTTP)
+public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntity> implements IBaseDataSetService {
 
     @Resource
     private ParamsClient paramsClient;
@@ -87,7 +87,7 @@ public class ApiDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntity
      * @return
      */
     private Object getData(DatasetEntity entity, List<DatasetParamDTO> finalParamList) {
-        ApiDataSetConfig config = (ApiDataSetConfig) entity.getConfig();
+        HttpDataSetConfig config = (HttpDataSetConfig) entity.getConfig();
         List<DatasetParamDTO> params = paramsClient.handleParams(finalParamList);
         config = this.handleParams(config, params);
         if (config.getRequestType().equals("frontend")) {
@@ -104,7 +104,7 @@ public class ApiDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntity
             throw new GlobalException("数据集测试数据不能为空");
         }
         apiInfoJson = paramsClient.handleScript(executeDTO.getDataSetType(), apiInfoJson);
-        ApiDataSetConfig config = JSON.parseObject(apiInfoJson, ApiDataSetConfig.class);
+        HttpDataSetConfig config = JSON.parseObject(apiInfoJson, HttpDataSetConfig.class);
         List<DatasetParamDTO> paramList = executeDTO.getParams();
         paramList = paramsClient.handleParams(paramList);
 
@@ -112,6 +112,7 @@ public class ApiDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntity
         DataVO dataVO = new DataVO();
         if (config.getRequestType().equals("frontend")) {
             dataVO.setData(config);
+            return dataVO;
         }
         Object data = this.getBackendData(config);
         dataVO.setData(data);
@@ -124,7 +125,7 @@ public class ApiDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntity
      * @param paramList
      * @return
      */
-    private ApiDataSetConfig handleParams(ApiDataSetConfig config, List<DatasetParamDTO> paramList) {
+    private HttpDataSetConfig handleParams(HttpDataSetConfig config, List<DatasetParamDTO> paramList) {
         if (paramList == null || paramList.size() == 0) {
             return config;
         }
@@ -211,7 +212,7 @@ public class ApiDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntity
 
     }
 
-    private Object getBackendData(ApiDataSetConfig config) {
+    private Object getBackendData(HttpDataSetConfig config) {
         Map<String, String> headers = config.getHeaders() == null ? Maps.newHashMap() : config.getHeaders().stream().collect(Collectors.toMap(item -> (String) item.get("name"), item -> (String) item.get("value")));
         Map<String, Object> params = config.getParams() == null ? Maps.newHashMap() : config.getParams().stream().collect(Collectors.toMap(item -> (String) item.get("name"), item -> item.get("value")));
         String body = config.getBody();

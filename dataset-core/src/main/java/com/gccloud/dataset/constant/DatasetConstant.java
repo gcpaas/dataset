@@ -35,9 +35,9 @@ public interface DatasetConstant {
         String JS = "js";
 
         /**
-         * API数据集
+         * HTTP数据集
          */
-        String API = "api";
+        String HTTP = "http";
     }
 
     interface DatasourceType {

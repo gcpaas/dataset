@@ -7,12 +7,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * http接口数据集配置
  * @author hongyang
  * @version 1.0
  * @date 2023/6/1 10:43
  */
 @Data
-public class ApiDataSetConfig extends BaseDataSetConfig {
+public class HttpDataSetConfig extends BaseDataSetConfig {
 
     @ApiModelProperty(value = "请求地址")
     private String url;
