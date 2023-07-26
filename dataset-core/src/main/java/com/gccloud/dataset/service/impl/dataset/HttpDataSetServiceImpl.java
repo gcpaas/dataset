@@ -213,9 +213,12 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
     }
 
     private Object getBackendData(HttpDataSetConfig config) {
-        Map<String, String> headers = config.getHeaders() == null ? Maps.newHashMap() : config.getHeaders().stream().collect(Collectors.toMap(item -> (String) item.get("name"), item -> (String) item.get("value")));
-        Map<String, Object> params = config.getParams() == null ? Maps.newHashMap() : config.getParams().stream().collect(Collectors.toMap(item -> (String) item.get("name"), item -> item.get("value")));
+        Map<String, String> headers = config.getHeaders() == null ? Maps.newHashMap() : config.getHeaders().stream().collect(Collectors.toMap(item -> (String) item.get("key"), item -> (String) item.get("value")));
+        Map<String, Object> params = config.getParams() == null ? Maps.newHashMap() : config.getParams().stream().collect(Collectors.toMap(item -> (String) item.get("key"), item -> item.get("value")));
         String body = config.getBody();
+        if (StringUtils.isBlank(body)) {
+            body = "{}";
+        }
         // 如果有请求前脚本，则执行请求前脚本
         if (StringUtils.isNotBlank(config.getRequestScript())) {
             Map<String, Object> requestScriptMap = Maps.newHashMap();
@@ -273,11 +276,6 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
             return JSON.parseArray(responseBody);
         }
         return responseBody;
-
-
-
-
-
     }
 
 
