@@ -66,7 +66,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
     @Override
     public String add(CategoryEntity entity) {
-        boolean repeat = this.checkNameRepeat(entity.getName(), entity.getId(), entity.getModuleCode(), entity.getType());
+        boolean repeat = this.checkNameRepeat(entity);
         if (repeat) {
             throw new GlobalException("节点名称重复");
         }
@@ -88,7 +88,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
     @Override
     public void update(CategoryEntity entity) {
-        boolean repeat = this.checkNameRepeat(entity.getName(), entity.getId(), entity.getModuleCode(), entity.getType());
+        boolean repeat = this.checkNameRepeat(entity);
         if (repeat) {
             throw new GlobalException("节点名称重复");
         }
@@ -107,12 +107,17 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
     }
 
     @Override
-    public boolean checkNameRepeat(String name, String id, String moduleCode, String type) {
+    public boolean checkNameRepeat(CategoryEntity entity) {
         LambdaQueryWrapper<CategoryEntity> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(CategoryEntity::getName, name);
-        queryWrapper.eq(StringUtils.isNotBlank(moduleCode), CategoryEntity::getModuleCode, moduleCode);
-        queryWrapper.eq(StringUtils.isNotBlank(type), CategoryEntity::getType, type);
-        queryWrapper.ne(StringUtils.isNotBlank(id), CategoryEntity::getId, id);
+        queryWrapper.eq(CategoryEntity::getName, entity.getName());
+        queryWrapper.eq(StringUtils.isNotBlank(entity.getModuleCode()), CategoryEntity::getModuleCode, entity.getModuleCode());
+        queryWrapper.eq(StringUtils.isNotBlank(entity.getType()), CategoryEntity::getType, entity.getType());
+        queryWrapper.ne(StringUtils.isNotBlank(entity.getId()), CategoryEntity::getId, entity.getId());
+        if (StringUtils.isBlank(entity.getParentId())) {
+            queryWrapper.eq(CategoryEntity::getParentId, SUPER_PARENT_ID);
+        } else {
+            queryWrapper.eq(CategoryEntity::getParentId, entity.getParentId());
+        }
         int count = this.count(queryWrapper);
         return count > 0;
     }

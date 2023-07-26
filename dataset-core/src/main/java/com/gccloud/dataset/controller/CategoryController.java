@@ -66,7 +66,7 @@ public class CategoryController {
     @PostMapping("/checkRepeat")
     @ApiPermission(permissions = {DatasetConstant.Permission.Dataset.CATEGORY_VIEW})
     public R<Boolean> checkRepeat(CategoryEntity entity) {
-        Boolean flag = categoryService.checkNameRepeat(entity.getName(), entity.getId(), entity.getModuleCode(), entity.getType());
+        Boolean flag = categoryService.checkNameRepeat(entity);
         return R.success(flag);
     }
 
