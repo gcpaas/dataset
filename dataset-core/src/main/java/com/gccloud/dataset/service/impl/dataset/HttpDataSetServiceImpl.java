@@ -2,6 +2,7 @@ package com.gccloud.dataset.service.impl.dataset;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.gccloud.common.exception.GlobalException;
+import com.gccloud.common.utils.BeanConvertUtils;
 import com.gccloud.common.utils.GroovyUtils;
 import com.gccloud.common.utils.HttpUtils;
 import com.gccloud.common.utils.JSON;
@@ -15,6 +16,7 @@ import com.gccloud.dataset.params.ParamsClient;
 import com.gccloud.dataset.permission.DatasetPermissionClient;
 import com.gccloud.dataset.service.IBaseDataSetService;
 import com.gccloud.dataset.vo.DataVO;
+import com.gccloud.dataset.vo.DatasetInfoVO;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +45,15 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
 
     @Resource
     private DatasetPermissionClient datasetPermissionClient;
+
+    /**
+     * 前端执行
+     */
+    public static final String FRONTEND = "frontend";
+    /**
+     * 后端执行
+     */
+    public static final String BACKEND = "backend";
 
 
     @Override
@@ -90,7 +101,7 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
         HttpDataSetConfig config = (HttpDataSetConfig) entity.getConfig();
         List<DatasetParamDTO> params = paramsClient.handleParams(finalParamList);
         config = this.handleParams(config, params);
-        if (config.getRequestType().equals("frontend")) {
+        if (config.getRequestType().equals(FRONTEND)) {
             return config;
         }
         return this.getBackendData(config);
@@ -110,7 +121,7 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
 
         config = this.handleParams(config, paramList);
         DataVO dataVO = new DataVO();
-        if (config.getRequestType().equals("frontend")) {
+        if (config.getRequestType().equals(FRONTEND)) {
             dataVO.setData(config);
             return dataVO;
         }
@@ -285,5 +296,21 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
     }
 
 
+    @Override
+    public DatasetInfoVO getInfoById(String id) {
+        DatasetEntity entity = this.getById(id);
+        DatasetInfoVO datasetInfoVO = BeanConvertUtils.convert(entity, DatasetInfoVO.class);
+        HttpDataSetConfig config = (HttpDataSetConfig) entity.getConfig();
+        datasetInfoVO.setFields(config.getFieldList());
+        datasetInfoVO.setParams(config.getParamsList());
+        datasetInfoVO.setExecutionByFrontend(config.getRequestType().equals(FRONTEND));
+        return datasetInfoVO;
+    }
 
+    @Override
+    public boolean checkBackendExecutionNeeded(String datasetId) {
+        DatasetEntity entity = this.getById(datasetId);
+        HttpDataSetConfig config = (HttpDataSetConfig) entity.getConfig();
+        return !config.getRequestType().equals(FRONTEND);
+    }
 }

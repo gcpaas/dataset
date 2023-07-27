@@ -50,6 +50,9 @@ public class DatasetInfoVO {
     @ApiModelProperty(value = "关联标签列表")
     private List<LabelEntity> labelList;
 
+    @ApiModelProperty(value = "是否需要由前端执行")
+    private Boolean executionByFrontend;
+
     /**
      * 数据集字段信息:字段名称
      */
