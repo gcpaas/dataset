@@ -18,6 +18,7 @@ import com.gccloud.dataset.service.IBaseDatasourceService;
 import com.gccloud.dataset.service.factory.DatasourceServiceFactory;
 import com.gccloud.dataset.service.impl.datasource.BaseDatasourceServiceImpl;
 import com.gccloud.dataset.vo.DataVO;
+import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -80,12 +81,14 @@ public class OriginalDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetE
         if (StringUtils.isBlank(fieldInfo)) {
             fieldInfo = "*";
         }
+        String dataSourceId = config.getSourceId();
+        DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);
+        String sourceType = datasource.getSourceType();
+        fieldInfo = handleSpecialField(fieldInfo, sourceType);
         if (DatasetConstant.DataRepeat.NOT_REPEAT.equals(config.getRepeatStatus())) {
             fieldInfo = "DISTINCT " + fieldInfo;
         }
         String sql = "SELECT " + fieldInfo + " FROM " + config.getTableName();
-        String dataSourceId = config.getSourceId();
-        DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
         DataVO dataVO = buildService.executeSqlPage(datasource, sql, current, size);
         return (PageVO) dataVO.getData();
@@ -117,34 +120,85 @@ public class OriginalDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetE
         if (StringUtils.isBlank(fieldInfo)) {
             fieldInfo = "*";
         }
+        String dataSourceId = config.getSourceId();
+        DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);
+        String sourceType = datasource.getSourceType();
+        fieldInfo = handleSpecialField(fieldInfo, sourceType);
         if (DatasetConstant.DataRepeat.NOT_REPEAT.equals(config.getRepeatStatus())) {
             fieldInfo = "DISTINCT " + fieldInfo;
         }
         String sql = "SELECT " + fieldInfo + " FROM " + config.getTableName();
-        String dataSourceId = config.getSourceId();
-        DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);
-        IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
+        IBaseDatasourceService buildService = datasourceServiceFactory.build(sourceType);
         DataVO dataVO = buildService.executeSql(datasource, sql);
         return dataVO.getData();
     }
 
     @Override
     public DataVO execute(TestExecuteDTO executeDTO) {
-        String sql = executeDTO.getScript();
-        if (StringUtils.isBlank(sql)) {
-            throw new GlobalException("sql不能为空");
+        String fieldInfo = executeDTO.getScript();
+        if (StringUtils.isBlank(fieldInfo)) {
+            fieldInfo = "*";
         }
-        DatasourceEntity datasource = datasourceService.getInfoById(executeDTO.getDataSourceId());
+        String dataSourceId = executeDTO.getDataSourceId();
+        DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);
+        String sourceType = datasource.getSourceType();
+        fieldInfo = handleSpecialField(fieldInfo, sourceType);
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
         DataVO dataVO;
         Integer current = executeDTO.getCurrent();
         Integer size = executeDTO.getSize();
         if (size != null && current != null) {
-            dataVO = buildService.executeSqlPage(datasource, sql, current, size);
+            dataVO = buildService.executeSqlPage(datasource, fieldInfo, current, size);
         } else {
-            dataVO = buildService.executeSql(datasource, sql);
+            dataVO = buildService.executeSql(datasource, fieldInfo);
         }
         return dataVO;
+    }
+
+    /**
+     * 处理特殊字段
+     * @param fieldInfo
+     * @param sourceType
+     * @return
+     */
+    private String handleSpecialField(String fieldInfo, String sourceType){
+        if ("*".equals(fieldInfo)) {
+            return fieldInfo;
+        }
+        // 分割字段，TODO 这里可能存在一个问题，如果字段中有逗号，会被分割成多个字段
+        List<String> fieldList = Lists.newArrayList(fieldInfo.split(","));
+        StringBuilder fields = new StringBuilder();
+        // 遍历处理字段
+        for (String field : fieldList) {
+            // 如果字段中包含除数字、字母、下划线以外的字符，需要特殊处理
+            if (field.matches("^[a-zA-Z0-9_]+$")) {
+                fields.append(field).append(",");
+                continue;
+            }
+            // 如果已经是特殊处理的字段，直接添加到字段列表中
+            if (field.startsWith("`") && field.endsWith("`")) {
+                fields.append(field).append(",");
+                continue;
+            }
+            if (field.startsWith("\"") && field.endsWith("\"")) {
+                fields.append(field).append(",");
+                continue;
+            }
+            switch (sourceType.toLowerCase()) {
+                case DatasetConstant.DatasourceType.MYSQL:
+                case DatasetConstant.DatasourceType.CLICKHOUSE:
+                    field = field.replace(field, "`" + field + "`");
+                    break;
+                case DatasetConstant.DatasourceType.ORACLE:
+                case DatasetConstant.DatasourceType.POSTGRESQL:
+                    field = field.replace(field, "\"" + field + "\"");
+                    break;
+                default:
+                    break;
+            }
+            fields.append(field).append(",");
+        }
+        return fields.substring(0, fields.length() - 1);
     }
 
     /**
