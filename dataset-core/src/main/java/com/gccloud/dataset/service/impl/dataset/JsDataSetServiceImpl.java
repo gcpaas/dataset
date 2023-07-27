@@ -59,9 +59,7 @@ public class JsDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntity>
         if (datasetEntity == null) {
             throw new GlobalException("数据集不存在");
         }
-        JsDataSetConfig config = (JsDataSetConfig) datasetEntity.getConfig();
-        String js = config.getScript();
-        return js;
+        return datasetEntity.getConfig();
     }
 
     @Override

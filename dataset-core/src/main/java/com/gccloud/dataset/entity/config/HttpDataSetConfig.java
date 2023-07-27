@@ -1,5 +1,6 @@
 package com.gccloud.dataset.entity.config;
 
+import com.gccloud.dataset.constant.DatasetConstant;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
@@ -14,6 +15,9 @@ import java.util.Map;
  */
 @Data
 public class HttpDataSetConfig extends BaseDataSetConfig {
+
+    @ApiModelProperty("数据集类型")
+    private String datasetType = DatasetConstant.DataSetType.HTTP;
 
     @ApiModelProperty(value = "请求地址")
     private String url;

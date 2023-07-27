@@ -1,10 +1,9 @@
 package com.gccloud.dataset.entity.config;
 
-import com.gccloud.dataset.dto.DatasetParamDTO;
+import com.gccloud.dataset.constant.DatasetConstant;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -14,6 +13,9 @@ import java.util.Map;
  */
 @Data
 public class JsDataSetConfig extends BaseDataSetConfig {
+
+    @ApiModelProperty("数据集类型")
+    private String datasetType = DatasetConstant.DataSetType.JS;
 
     @ApiModelProperty(value = "脚本")
     private String script;
