@@ -234,6 +234,7 @@ public class DBUtils {
      * @return
      */
     public static DbDataVO getSqlValue(String sql, DatasourceEntity datasource) {
+        log.info("执行sql:" + sql);
         Connection connection = getConnection(datasource);
         if (connection == null) {
             throw new GlobalException("数据源连接建立失败");
@@ -265,20 +266,6 @@ public class DBUtils {
                 }
                 data.add(map);
             }
-        } catch (SQLException e) {
-            if (e.getMessage().contains("doesn't exist") || e.getMessage().contains("does not exist")) {
-                log.error("数据查询失败：查询表不存在：{}", e.getMessage());
-                throw new GlobalException("数据查询失败：查询表不存在");
-            } else if (e.getMessage().contains("parameter")) {
-                log.error("数据查询失败：请检查参数是否配置规范：{}", e.getMessage());
-                throw new GlobalException("数据查询失败：请检查参数是否配置规范");
-            } else {
-                log.error("数据查询失败：{}", e.getMessage());
-                throw new GlobalException("数据查询失败");
-            }
-        } catch (ArrayIndexOutOfBoundsException e) {
-            log.error(e.getMessage());
-            throw new GlobalException("请检查参数配置与SQL加工脚本是否对应");
         } catch (Exception e) {
             log.error("数据查询失败:{}", ExceptionUtils.getStackTrace(e));
             throw new GlobalException("数据查询失败" + e.getMessage());

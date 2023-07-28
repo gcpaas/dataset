@@ -3,6 +3,7 @@ package com.gccloud.dataset.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.gccloud.common.permission.ApiPermission;
 import com.gccloud.common.utils.BeanConvertUtils;
+import com.gccloud.common.utils.JSON;
 import com.gccloud.common.vo.PageVO;
 import com.gccloud.common.vo.R;
 import com.gccloud.dataset.constant.DatasetConstant;
@@ -31,6 +32,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONObject;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -229,6 +231,12 @@ public class DatasetController {
         result.put("structure", execute.getStructure());
         if (StringUtils.isNotBlank(executeDTO.getDataSourceId())) {
             DatasourceEntity datasource = datasourceService.getInfoById(executeDTO.getDataSourceId());
+            if (executeDTO.getDataSetType().equals(DatasetConstant.DataSetType.ORIGINAL)) {
+                String originalString = executeDTO.getScript();
+                JSONObject originalTest = JSON.parseObject(originalString);
+                String tableName = originalTest.getString("tableName");
+                executeDTO.setScript("select 1 from " + tableName);
+            }
             List<String> tableNameList = DBUtils.getTableNames(DBUtils.updateParamsConfig(executeDTO.getScript(), executeDTO.getParams()), datasource.getSourceType());
             result.put("tableNameList", tableNameList);
         }

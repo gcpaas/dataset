@@ -3,6 +3,7 @@ package com.gccloud.dataset.service.impl.dataset;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.gccloud.common.exception.GlobalException;
+import com.gccloud.common.utils.JSON;
 import com.gccloud.common.vo.PageVO;
 import com.gccloud.dataset.constant.DatasetConstant;
 import com.gccloud.dataset.dao.DatasetDao;
@@ -21,6 +22,8 @@ import com.gccloud.dataset.vo.DataVO;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -135,22 +138,40 @@ public class OriginalDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetE
 
     @Override
     public DataVO execute(TestExecuteDTO executeDTO) {
-        String fieldInfo = executeDTO.getScript();
+        String jsonString = executeDTO.getScript();
+        if (StringUtils.isBlank(jsonString)) {
+            throw new GlobalException("数据集配置异常");
+        }
+        JSONObject originalTest = JSON.parseObject(jsonString);
+        JSONArray fieldArray = originalTest.getJSONArray("fieldInfo");
+        // 逗号分隔
+        String fieldInfo = "";
+        for (Object o : fieldArray) {
+            String field = (String) o;
+            fieldInfo += field + ",";
+        }
         if (StringUtils.isBlank(fieldInfo)) {
             fieldInfo = "*";
+        } else {
+            fieldInfo = fieldInfo.substring(0, fieldInfo.length() - 1);
         }
         String dataSourceId = executeDTO.getDataSourceId();
         DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);
         String sourceType = datasource.getSourceType();
         fieldInfo = handleSpecialField(fieldInfo, sourceType);
+        String sql = "SELECT ";
+        if (DatasetConstant.DataRepeat.NOT_REPEAT.equals(originalTest.getInt("repeatStatus"))) {
+            sql += "DISTINCT ";
+        }
+        sql += fieldInfo + " FROM " + originalTest.getString("tableName");
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
         DataVO dataVO;
         Integer current = executeDTO.getCurrent();
         Integer size = executeDTO.getSize();
         if (size != null && current != null) {
-            dataVO = buildService.executeSqlPage(datasource, fieldInfo, current, size);
+            dataVO = buildService.executeSqlPage(datasource, sql, current, size);
         } else {
-            dataVO = buildService.executeSql(datasource, fieldInfo);
+            dataVO = buildService.executeSql(datasource, sql);
         }
         return dataVO;
     }
