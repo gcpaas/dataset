@@ -10,6 +10,7 @@ import com.gccloud.dataset.dto.TestExecuteDTO;
 import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.DatasourceEntity;
 import com.gccloud.dataset.entity.config.CustomDataSetConfig;
+import com.gccloud.dataset.extend.dataset.DatasetExtendClient;
 import com.gccloud.dataset.params.ParamsClient;
 import com.gccloud.dataset.permission.DatasetPermissionClient;
 import com.gccloud.dataset.service.IBaseDataSetService;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author hongyang
@@ -45,6 +47,9 @@ public class CustomDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
 
     @Resource
     private DatasetPermissionClient datasetPermissionClient;
+
+    @Resource
+    private DatasetExtendClient datasetExtendClient;
 
 
     @Override
@@ -87,7 +92,12 @@ public class CustomDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
         DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
         DataVO dataVO = buildService.executeSqlPage(datasource, sql, current, size);
-        return (PageVO) dataVO.getData();
+        PageVO data = (PageVO) dataVO.getData();
+        List list = data.getList();
+        // 自定义数据处理
+        list = datasetExtendClient.handleData(list, entity);
+        data.setList(list);
+        return data;
     }
 
 
@@ -124,7 +134,10 @@ public class CustomDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
         DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
         DataVO dataVO = buildService.executeSql(datasource, sql);
-        return dataVO.getData();
+        List list = (List) dataVO.getData();
+        // 自定义数据处理
+        list = datasetExtendClient.handleData(list, entity);
+        return list;
     }
 
     @Override

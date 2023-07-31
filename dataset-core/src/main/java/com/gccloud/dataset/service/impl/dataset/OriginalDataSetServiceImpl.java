@@ -13,6 +13,7 @@ import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.DatasourceEntity;
 import com.gccloud.dataset.entity.config.BaseDataSetConfig;
 import com.gccloud.dataset.entity.config.OriginalDataSetConfig;
+import com.gccloud.dataset.extend.dataset.DatasetExtendClient;
 import com.gccloud.dataset.permission.DatasetPermissionClient;
 import com.gccloud.dataset.service.IBaseDataSetService;
 import com.gccloud.dataset.service.IBaseDatasourceService;
@@ -48,6 +49,8 @@ public class OriginalDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetE
     @Resource
     private DatasetPermissionClient datasetPermissionClient;
 
+    @Resource
+    private DatasetExtendClient datasetExtendClient;
 
     @Override
     public String add(DatasetEntity entity) {
@@ -94,7 +97,12 @@ public class OriginalDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetE
         String sql = "SELECT " + fieldInfo + " FROM " + config.getTableName();
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
         DataVO dataVO = buildService.executeSqlPage(datasource, sql, current, size);
-        return (PageVO) dataVO.getData();
+        PageVO data = (PageVO) dataVO.getData();
+        List list = data.getList();
+        // 自定义数据处理
+        list = datasetExtendClient.handleData(list, entity);
+        data.setList(list);
+        return data;
     }
 
     @Override
@@ -133,7 +141,10 @@ public class OriginalDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetE
         String sql = "SELECT " + fieldInfo + " FROM " + config.getTableName();
         IBaseDatasourceService buildService = datasourceServiceFactory.build(sourceType);
         DataVO dataVO = buildService.executeSql(datasource, sql);
-        return dataVO.getData();
+        List list = (List) dataVO.getData();
+        // 自定义数据处理
+        list = datasetExtendClient.handleData(list, entity);
+        return list;
     }
 
     @Override

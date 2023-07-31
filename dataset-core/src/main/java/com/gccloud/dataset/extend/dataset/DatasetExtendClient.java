@@ -1,5 +1,6 @@
 package com.gccloud.dataset.extend.dataset;
 
+import com.gccloud.dataset.entity.DatasetEntity;
 import com.google.common.collect.Lists;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
@@ -7,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 数据集扩展客户端，用于获取数据集扩展实现类，执行扩展方法
@@ -55,6 +57,29 @@ public class DatasetExtendClient {
             order = clazz.getAnnotation(Order.class).value();
         }
         return order;
+    }
+
+    /**
+     * 数据处理，处理数据集的返回数据
+     * @param data
+     * @param datasetEntity
+     * @return
+     */
+    public List<Map<String, Object>> handleData(List<Map<String, Object>> data, DatasetEntity datasetEntity) {
+        if (extendServiceList == null || extendServiceList.isEmpty()) {
+            return data;
+        }
+        // 获取实现类上的@Order注解的值，按值从小到大排序，即值越小，越先执行
+        extendServiceList.sort((o1, o2) -> {
+            int order1 = getOrderValue(o1.getClass());
+            int order2 = getOrderValue(o2.getClass());
+            return order1 - order2;
+        });
+        // 根据排序后的顺序执行数据处理
+        for (IDatasetExtendService service : extendServiceList) {
+            data = service.handleData(data, datasetEntity);
+        }
+        return data;
     }
 
 }

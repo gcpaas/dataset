@@ -10,6 +10,7 @@ import com.gccloud.dataset.dto.TestExecuteDTO;
 import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.DatasourceEntity;
 import com.gccloud.dataset.entity.config.StoredProcedureDataSetConfig;
+import com.gccloud.dataset.extend.dataset.DatasetExtendClient;
 import com.gccloud.dataset.params.ParamsClient;
 import com.gccloud.dataset.permission.DatasetPermissionClient;
 import com.gccloud.dataset.service.IBaseDataSetService;
@@ -46,6 +47,8 @@ public class StoredProcedureDataSetServiceImpl extends ServiceImpl<DatasetDao, D
     @Resource
     private DatasetPermissionClient datasetPermissionClient;
 
+    @Resource
+    private DatasetExtendClient datasetExtendClient;
 
     @Override
     public String add(DatasetEntity entity) {
@@ -85,7 +88,12 @@ public class StoredProcedureDataSetServiceImpl extends ServiceImpl<DatasetDao, D
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
         // 执行存储过程
         DataVO dataVO = buildService.executeProcedure(datasource, sqlProcess, current, size);
-        return (PageVO) dataVO.getData();
+        PageVO data = (PageVO) dataVO.getData();
+        List list = data.getList();
+        // 自定义数据处理
+        list = datasetExtendClient.handleData(list, dataset);
+        data.setList(list);
+        return data;
     }
 
     @Override
@@ -124,7 +132,10 @@ public class StoredProcedureDataSetServiceImpl extends ServiceImpl<DatasetDao, D
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
         // 执行存储过程
         DataVO dataVO = buildService.executeProcedure(datasource, sqlProcess, null, null);
-        return dataVO.getData();
+        List list = (List) dataVO.getData();
+        // 自定义数据处理
+        list = datasetExtendClient.handleData(list, dataset);
+        return list;
     }
 
     @Override
