@@ -41,7 +41,7 @@
         <hanlp.version>portable-1.7.8</hanlp.version>
         <hutool.version>5.3.1</hutool.version>
         <guava.version>20.0</guava.version>
-        <jackson.version.core>2.13.3</jackson.version.core>
+        <jackson.version.core>2.13.4</jackson.version.core>
         <json.version>20220320</json.version>
         <druid.version>1.2.11</druid.version>
         <p6spy.version>3.9.0</p6spy.version>
