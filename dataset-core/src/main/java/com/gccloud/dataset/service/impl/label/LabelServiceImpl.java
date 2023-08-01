@@ -57,13 +57,6 @@ public class LabelServiceImpl extends ServiceImpl<LabelDao, LabelEntity> impleme
         }
         // 新增标签
         this.save(labelEntity);
-        // 保存与数据集的关联
-        List<DatasetLabelEntity> relList = labelDTO.getRelList();
-        if (relList == null || relList.isEmpty()) {
-            return labelEntity.getId();
-        }
-        List<String> datasetIdList = relList.stream().map(DatasetLabelEntity::getDatasetId).collect(Collectors.toList());
-        datasetLabelService.addByLabelId(labelEntity.getId(), datasetIdList);
         return labelEntity.getId();
     }
 
@@ -77,15 +70,6 @@ public class LabelServiceImpl extends ServiceImpl<LabelDao, LabelEntity> impleme
         }
         // 更新标签
         this.updateById(labelEntity);
-        // 先删除数据集与标签的关联
-        datasetLabelService.deleteByLabelId(labelEntity.getId());
-        // 更新与数据集的关联
-        List<DatasetLabelEntity> relList = labelDTO.getRelList();
-        if (relList == null || relList.isEmpty()) {
-            return;
-        }
-        List<String> datasetIdList = relList.stream().map(DatasetLabelEntity::getDatasetId).collect(Collectors.toList());
-        datasetLabelService.addByLabelId(labelEntity.getId(), datasetIdList);
     }
 
     @Override

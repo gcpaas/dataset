@@ -30,6 +30,4 @@ public class LabelDTO {
     @ApiModelProperty(value = "标签说明")
     private String labelDesc;
 
-    @ApiModelProperty(value = "关系集合")
-    private List<DatasetLabelEntity> relList;
 }
