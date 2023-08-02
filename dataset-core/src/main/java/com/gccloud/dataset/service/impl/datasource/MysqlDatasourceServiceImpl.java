@@ -104,9 +104,9 @@ public class MysqlDatasourceServiceImpl extends ServiceImpl<DatasourceDao, Datas
         }
         for (Map<String, Object> map : data) {
             FieldInfoVO fieldInfoVO = new FieldInfoVO();
-            fieldInfoVO.setColumnName(map.get("Field").toString());
-            fieldInfoVO.setColumnType(map.get("Type").toString());
-            fieldInfoVO.setColumnComment(map.get("Comment").toString());
+            fieldInfoVO.setColumnName(String.valueOf(map.get("Field")));
+            fieldInfoVO.setColumnType(String.valueOf(map.get("Type")));
+            fieldInfoVO.setColumnComment(String.valueOf(map.get("Comment")));
             fieldList.add(fieldInfoVO);
         }
         return fieldList;
@@ -123,7 +123,7 @@ public class MysqlDatasourceServiceImpl extends ServiceImpl<DatasourceDao, Datas
         }
         for (Map<String, Object> map : data) {
             TableInfoVO tableInfoVO = new TableInfoVO();
-            tableInfoVO.setName(map.get("Name").toString());
+            tableInfoVO.setName(String.valueOf(map.get("Name")));
             tableInfoVO.setStatus(0);
             tableList.add(tableInfoVO);
         }

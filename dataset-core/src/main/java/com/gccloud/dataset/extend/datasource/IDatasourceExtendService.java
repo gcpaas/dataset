@@ -18,4 +18,13 @@ public interface IDatasourceExtendService {
      */
     String deleteCheck(String id);
 
+    /**
+     * 实现类所属的业务类型
+     * 用于在删除数据源时，区分数据源删除前校验结果归属于哪个业务类型
+     * @return
+     */
+    default String getServiceType() {
+        return null;
+    }
+
 }

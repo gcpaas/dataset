@@ -1,12 +1,13 @@
 package com.gccloud.dataset.extend.dataset;
 
 import com.gccloud.dataset.entity.DatasetEntity;
-import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -29,11 +30,11 @@ public class DatasetExtendClient {
      * @param datasetId
      * @return
      */
-    public List<String> deleteCheck(String datasetId){
+    public Map<String, String>  deleteCheck(String datasetId){
         if (extendServiceList == null || extendServiceList.isEmpty()) {
-            return new ArrayList<>();
+            return new HashMap<>();
         }
-        List<String> reasons = Lists.newArrayList();
+        Map<String, String> reasons = Maps.newHashMap();
         // 获取实现类上的@Order注解的值，按值从小到大排序，即值越小，越先执行
         extendServiceList.sort((o1, o2) -> {
             int order1 = getOrderValue(o1.getClass());
@@ -46,7 +47,14 @@ public class DatasetExtendClient {
             if (checkResult == null || "".equals(checkResult)) {
                 continue;
             }
-            reasons.add(checkResult);
+            String serviceType = service.getServiceType();
+            if (StringUtils.isBlank(serviceType)) {
+                serviceType = "业务系统";
+            }
+            if (reasons.containsKey(serviceType)) {
+                checkResult = reasons.get(serviceType) + "\n" + checkResult;
+            }
+            reasons.put(serviceType, checkResult);
         }
         return reasons;
     }

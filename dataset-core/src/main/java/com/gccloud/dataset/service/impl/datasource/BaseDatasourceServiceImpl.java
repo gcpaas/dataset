@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 数据源基础服务，仅提供数据源的基础操作（增、删、改、查），未实现具体的数据源执行逻辑
@@ -53,10 +54,10 @@ public class BaseDatasourceServiceImpl extends ServiceImpl<DatasourceDao, Dataso
             }
             msg = msg.substring(0, msg.length() - 1);
         }
-        List<String> reasons = extendClient.deleteCheck(id);
-        reasons.add(msg);
-        // 去除空值，空白字符串或null
-        reasons.removeIf(StringUtils::isBlank);
+        Map<String, String> reasons = extendClient.deleteCheck(id);
+        if (StringUtils.isNotBlank(msg)) {
+            reasons.put("数据集", msg);
+        }
         DeleteCheckVO vo = new DeleteCheckVO();
         vo.setReasons(reasons);
         vo.setCanDelete(reasons.size() == 0);

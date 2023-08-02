@@ -1,10 +1,9 @@
 package com.gccloud.dataset.vo;
 
 import io.swagger.annotations.ApiModelProperty;
-import io.swagger.annotations.ApiOperation;
 import lombok.Data;
 
-import java.util.List;
+import java.util.Map;
 
 /**
  * @author hongyang
@@ -18,6 +17,6 @@ public class DeleteCheckVO {
     private Boolean canDelete = true;
 
     @ApiModelProperty(value = "不可删除原因")
-    private List<String> reasons;
+    private Map<String, String> reasons;
 
 }

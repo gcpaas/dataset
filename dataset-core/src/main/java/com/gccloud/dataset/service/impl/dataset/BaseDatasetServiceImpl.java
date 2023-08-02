@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -135,12 +136,10 @@ public class BaseDatasetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
 
     @Override
     public DeleteCheckVO deleteCheck(String id) {
-        List<String> reasons = extendClient.deleteCheck(id);
+        Map<String, String> reasons = extendClient.deleteCheck(id);
         if (reasons == null || reasons.isEmpty()) {
             return new DeleteCheckVO();
         }
-        // 去除空值，空白字符串或null
-        reasons.removeIf(StringUtils::isBlank);
         DeleteCheckVO vo = new DeleteCheckVO();
         vo.setReasons(reasons);
         vo.setCanDelete(reasons.size() == 0);

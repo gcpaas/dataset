@@ -23,6 +23,17 @@ public interface IDatasetExtendService {
      */
     String deleteCheck(String id);
 
+
+    /**
+     * 实现类所属的业务类型
+     * 用于在删除数据集时，区分删除前校验结果归属于哪个业务类型
+     * @return
+     */
+    default String getServiceType() {
+        return null;
+    }
+
+
     /**
      * 数据处理，可通过实现该方法来处理数据集的返回数据
      * @param data 数据集返回数据
