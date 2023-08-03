@@ -102,6 +102,19 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
         List<DatasetParamDTO> params = paramsClient.handleParams(finalParamList);
         config = this.handleParams(config, params);
         if (config.getRequestType().equals(FRONTEND)) {
+            // 将params替换掉config中的值
+            if (params!=null && !params.isEmpty()) {
+                List<DatasetParamDTO> configParams = config.getParamsList();
+                for (DatasetParamDTO param : params) {
+                    // 如果有name相同的，替换掉
+                    for (DatasetParamDTO configParam : configParams) {
+                        if (param.getName().equals(configParam.getName())) {
+                            configParam.setValue(param.getValue());
+                            break;
+                        }
+                    }
+                }
+            }
             return config;
         }
         return this.getBackendData(config);
