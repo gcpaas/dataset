@@ -240,18 +240,18 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
         Map<String, String> headers = config.getHeaders() == null ? Maps.newHashMap() : config.getHeaders().stream().collect(Collectors.toMap(item -> (String) item.get("key"), item -> (String) item.get("value")));
         Map<String, Object> params = config.getParams() == null ? Maps.newHashMap() : config.getParams().stream().collect(Collectors.toMap(item -> (String) item.get("key"), item -> item.get("value")));
         String body = config.getBody();
-        if (StringUtils.isBlank(body)) {
-            body = "{}";
-        }
+
         // 如果有请求前脚本，则执行请求前脚本
+        Map<String, Object> reqParams = Maps.newHashMap();
+        // url参数，默认为空，如果在脚本中有赋值，则后续拼接url时会使用这里的赋值（参数优先级 脚本赋值>参数预处理>外部入参>默认值）
+        reqParams.put("url", Maps.newHashMap());
+        reqParams.put("headers", headers);
+        reqParams.put("params", params);
+        reqParams.put("data", body);
         if (StringUtils.isNotBlank(config.getRequestScript())) {
             Map<String, Object> requestScriptMap = Maps.newHashMap();
-            // 取name和value
-            requestScriptMap.put("headers", headers);
-            requestScriptMap.put("params", params);
-            requestScriptMap.put("body", config.getBody());
-            Object run = GroovyUtils.run(config.getRequestScript(), requestScriptMap);
-            body = run == null ? null : run.toString();
+            requestScriptMap.put("req", reqParams);
+            GroovyUtils.run(config.getRequestScript(), requestScriptMap);
         }
         // 拼接url和参数
         StringBuilder url = new StringBuilder(config.getUrl());
@@ -261,8 +261,15 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
             } else {
                 url.append("&");
             }
+            Map<String, Object> urlParams = (Map<String, Object>) reqParams.get("url");
+            urlParams = urlParams == null ? Maps.newHashMap() : urlParams;
             for (Map.Entry<String, Object> entry : params.entrySet()) {
-                url.append(entry.getKey()).append("=").append(entry.getValue()).append("&");
+                String key = entry.getKey();
+                String value = String.valueOf(entry.getValue());
+                if (urlParams.containsKey(key)) {
+                    value = String.valueOf(urlParams.get(key));
+                }
+                url.append(key).append("=").append(value).append("&");
             }
             url = new StringBuilder(url.substring(0, url.length() - 1));
         }
@@ -273,7 +280,20 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
                 response = HttpUtils.get(url.toString(), headers);
                 break;
             case "POST":
-                response = HttpUtils.post(url.toString(),"", headers, body);
+                Map<String, Object> upperCaseHeaders = Maps.newHashMap();
+                for (Map.Entry<String, String> entry : headers.entrySet()) {
+                    upperCaseHeaders.put(entry.getKey().toUpperCase(), entry.getValue());
+                }
+                // 从Header中取Content-Type
+                Object contentTypeObj = upperCaseHeaders.get("Content-Type".toUpperCase());
+                String contentType = contentTypeObj == null ? "" : contentTypeObj.toString();
+                if (contentTypeObj == null && (reqParams.get("data") == null || reqParams.get("data").toString().length() > 0)) {
+                    // HttpUtils.post传入的contentType为空时，则默认为application/json，这时如果data为空，需要将data置为空json{}
+                    body = "{}";
+                } else {
+                    body = reqParams.get("data") == null ? "" : reqParams.get("data").toString();
+                }
+                response = HttpUtils.post(url.toString(), contentType, headers, body);
                 break;
             default:
                 throw new GlobalException("不支持的请求方式");
