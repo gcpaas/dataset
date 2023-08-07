@@ -27,6 +27,8 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.io.IOException;
+import java.net.URL;
+import java.net.URLDecoder;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -253,6 +255,25 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
             requestScriptMap.put("req", reqParams);
             GroovyUtils.run(config.getRequestScript(), requestScriptMap);
         }
+        // 替换url中的参数
+        Map<String, String> paramsInUrl = getUrlParams(config.getUrl());
+        if (!paramsInUrl.isEmpty()) {
+            // 去除url中的参数，后面整体重新拼接
+            config.setUrl(config.getUrl().replaceAll("\\?.*", ""));
+            Map<String, Object> urlParams = (Map<String, Object>) reqParams.get("url");
+            urlParams = urlParams == null ? Maps.newHashMap() : urlParams;
+            for (Map.Entry<String, String> entry : paramsInUrl.entrySet()) {
+                String key = entry.getKey();
+                String value = entry.getValue();
+                if (!urlParams.containsKey(key)) {
+                    // 将原本的url参数放入params中，一会儿重新拼接
+                    params.put(key, value);
+                    continue;
+                }
+                // 如果url中的参数在脚本中有赋值，则使用脚本中的赋值
+                params.put(key, urlParams.get(key));
+            }
+        }
         // 拼接url和参数
         StringBuilder url = new StringBuilder(config.getUrl());
         if (params.size() > 0) {
@@ -261,14 +282,9 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
             } else {
                 url.append("&");
             }
-            Map<String, Object> urlParams = (Map<String, Object>) reqParams.get("url");
-            urlParams = urlParams == null ? Maps.newHashMap() : urlParams;
             for (Map.Entry<String, Object> entry : params.entrySet()) {
                 String key = entry.getKey();
                 String value = String.valueOf(entry.getValue());
-                if (urlParams.containsKey(key)) {
-                    value = String.valueOf(urlParams.get(key));
-                }
                 url.append(key).append("=").append(value).append("&");
             }
             url = new StringBuilder(url.substring(0, url.length() - 1));
@@ -298,6 +314,14 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
             default:
                 throw new GlobalException("不支持的请求方式");
         }
+        if (!response.isSuccessful()) {
+            String message = response.message();
+            String errorMessage = "请求失败 code: " + response.code();
+            if (StringUtils.isNotBlank(message)) {
+                errorMessage += " message: " + message;
+            }
+            throw new GlobalException(errorMessage);
+        }
         String responseBody = null;
         try {
             responseBody = response.body().string();
@@ -322,12 +346,38 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
         return responseBody;
     }
 
-
+    /**
+     * 替换 ${} 格式的参数
+     * @param param
+     * @param str
+     * @return
+     */
     private String parameterReplace(DatasetParamDTO param, String str) {
         str = str.replaceAll("\\$\\{" + param.getName() + "\\}", param.getValue());
         return str;
     }
 
+    /**
+     * 从url中解析出参数
+     * @param urlString
+     * @return
+     */
+    private Map<String, String> getUrlParams(String urlString) {
+        Map<String, String> map = Maps.newHashMap();
+        try {
+            URL url = new URL(urlString);
+            String query = url.getQuery();
+            String[] params = query.split("&");
+            for (String param : params) {
+                String[] keyValue = param.split("=");
+                String key = URLDecoder.decode(keyValue[0], "UTF-8");
+                String value = URLDecoder.decode(keyValue[1], "UTF-8");
+                map.put(key, value);
+            }
+        } catch (Exception ignored) {
+        }
+        return map;
+    }
 
     @Override
     public DatasetInfoVO getInfoById(String id) {
