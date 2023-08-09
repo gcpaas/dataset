@@ -114,7 +114,7 @@ public class DBUtils {
                     // 获取数据
                     Map<String, Object> map = new HashMap<>(columnCount);
                     for (int i = 1; i <= columnCount; i++) {
-                        map.put(metaData.getColumnName(i), rs.getObject(i));
+                        map.put(metaData.getColumnName(i), rs.getString(i));
                     }
                     data.add(map);
                 }
@@ -154,7 +154,7 @@ public class DBUtils {
                     // 获取数据
                     Map<String, Object> map = new HashMap<>(columnCount);
                     for (int i = 1; i <= columnCount; i++) {
-                        map.put(metaData.getColumnName(i), rs.getObject(i));
+                        map.put(metaData.getColumnName(i), rs.getString(i));
                     }
                     data.add(map);
                 }
@@ -202,7 +202,7 @@ public class DBUtils {
                 // 获取数据
                 Map<String, Object> map = new HashMap<>(columnCount);
                 for (int i = 1; i <= columnCount; i++) {
-                    map.put(metaData.getColumnName(i), rs.getObject(i));
+                    map.put(metaData.getColumnName(i), rs.getString(i));
                 }
                 data.add(map);
             }
@@ -262,7 +262,7 @@ public class DBUtils {
                 // 获取数据
                 Map<String, Object> map = new HashMap<>(columnCount);
                 for (int i = 1; i <= columnCount; i++) {
-                    map.put(metaData.getColumnName(i), clickRs.getObject(i));
+                    map.put(metaData.getColumnName(i), clickRs.getString(i));
                 }
                 data.add(map);
             }
