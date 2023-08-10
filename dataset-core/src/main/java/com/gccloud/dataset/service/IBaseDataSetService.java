@@ -79,8 +79,8 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
      */
     default String add(DatasetEntity entity) {
         if (StringUtils.isBlank(entity.getCode())) {
-            // 随机生成编码
-            entity.setCode(RandomStringUtils.randomAlphanumeric(10));
+            // 随机生成编码，纯字母
+            entity.setCode(RandomStringUtils.randomAlphabetic(10));
         }
         this.save(entity);
         return entity.getId();
