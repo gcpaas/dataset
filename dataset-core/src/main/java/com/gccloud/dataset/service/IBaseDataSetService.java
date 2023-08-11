@@ -14,12 +14,14 @@ import com.gccloud.dataset.vo.DataVO;
 import com.gccloud.dataset.vo.DatasetInfoVO;
 import com.gccloud.dataset.vo.DeleteCheckVO;
 import com.github.benmanes.caffeine.cache.AsyncCache;
+import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -34,6 +36,15 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
      */
     AsyncCache<String, Object> DATASET_CACHE = Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).buildAsync();
 
+    /**
+     * 数据集实体缓存
+     */
+    AsyncCache<String, DatasetEntity> DATASET_ENTITY_CACHE = Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).buildAsync();
+
+    /**
+     * 数据集配置缓存
+     */
+    AsyncCache<String, DatasetInfoVO> DATASET_INFO_CACHE = Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.MINUTES).buildAsync();
 
     /**
      * 列表查询
@@ -95,6 +106,8 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
     default void update(DatasetEntity entity) {
         this.updateById(entity);
         DATASET_CACHE.synchronous().invalidate(entity.getId());
+        DATASET_ENTITY_CACHE.synchronous().invalidate(entity.getId());
+        DATASET_INFO_CACHE.synchronous().invalidate(entity.getId());
     }
 
 
@@ -106,6 +119,8 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
     default void delete(String id) {
         this.removeById(id);
         DATASET_CACHE.synchronous().invalidate(id);
+        DATASET_ENTITY_CACHE.synchronous().invalidate(id);
+        DATASET_INFO_CACHE.synchronous().invalidate(id);
     }
 
 
@@ -138,16 +153,51 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
 
     /**
      * 根据id查询数据集详情
+     * 使用缓存减少数据库查询
      * @param id
      * @return
      */
     default DatasetInfoVO getInfoById(String id) {
-        DatasetEntity entity = this.getById(id);
+        CompletableFuture<DatasetInfoVO> future = DATASET_INFO_CACHE.get(id, key -> {
+            DatasetEntity entity = this.getByIdFromCache(id);
+            DatasetInfoVO datasetInfoVO = BeanConvertUtils.convert(entity, DatasetInfoVO.class);
+            BaseDataSetConfig config = entity.getConfig();
+            datasetInfoVO.setFields(config.getFieldList());
+            datasetInfoVO.setParams(config.getParamsList());
+            return datasetInfoVO;
+        });
+        try {
+            return future.get();
+        } catch (Exception ignored) {
+        }
+        DatasetEntity entity = this.getByIdFromCache(id);
         DatasetInfoVO datasetInfoVO = BeanConvertUtils.convert(entity, DatasetInfoVO.class);
         BaseDataSetConfig config = entity.getConfig();
         datasetInfoVO.setFields(config.getFieldList());
         datasetInfoVO.setParams(config.getParamsList());
         return datasetInfoVO;
+    }
+
+    /**
+     * 根据id查询数据集详情
+     * 使用缓存减少数据库查询
+     * @param id
+     * @return
+     */
+    default DatasetEntity getByIdFromCache(String id) {
+        CompletableFuture<DatasetEntity> future = DATASET_ENTITY_CACHE.get(id, key -> {
+            DatasetEntity entity = this.getById(id);
+            System.out.println("查询数据库");
+            return entity;
+        });
+        try {
+            return future.get();
+        } catch (Exception ignored) {
+        }
+        System.out.println("查询数据库");
+        DatasetEntity entity = this.getById(id);
+        DATASET_ENTITY_CACHE.put(id, CompletableFuture.completedFuture(entity));
+        return entity;
     }
 
     /**

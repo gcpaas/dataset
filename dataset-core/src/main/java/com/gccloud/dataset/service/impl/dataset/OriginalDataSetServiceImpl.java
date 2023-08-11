@@ -23,12 +23,14 @@ import com.gccloud.dataset.vo.DataVO;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * 原始数据集服务实现类
@@ -78,7 +80,7 @@ public class OriginalDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetE
         if (StringUtils.isBlank(id)) {
             throw new GlobalException("数据集id不能为空");
         }
-        DatasetEntity entity = this.getById(id);
+        DatasetEntity entity = this.getByIdFromCache(id);
         if (entity == null) {
             throw new GlobalException("数据集不存在");
         }
@@ -110,12 +112,18 @@ public class OriginalDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetE
         if (StringUtils.isBlank(id)) {
             throw new GlobalException("数据集id不能为空");
         }
-        DatasetEntity entity = this.getById(id);
+        DatasetEntity entity = this.getByIdFromCache(id);
         if (entity == null) {
             throw new GlobalException("数据集不存在");
         }
         if (DatasetConstant.DatasetCache.OPEN.equals(entity.getCache())) {
-            return DATASET_CACHE.get(id, key -> getData(entity));
+            CompletableFuture<Object> future = DATASET_CACHE.get(id, key -> getData(entity));
+            try {
+                return future.get();
+            } catch (Exception e) {
+                log.error("数据集缓存异常：{}", e.getMessage());
+                log.error(ExceptionUtils.getStackTrace(e));
+            }
         }
         return getData(entity);
     }

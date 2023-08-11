@@ -31,6 +31,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -82,13 +83,20 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
         if (StringUtils.isBlank(id)) {
             throw new GlobalException("数据集id不能为空");
         }
-        DatasetEntity entity = this.getById(id);
+        DatasetEntity entity = this.getByIdFromCache(id);
         if (entity == null) {
             throw new GlobalException("数据集不存在");
         }
         final List<DatasetParamDTO> finalParamList = Lists.newArrayList(paramList);
         if (DatasetConstant.DatasetCache.OPEN.equals(entity.getCache())) {
-            return DATASET_CACHE.get(id, key -> getData(entity, finalParamList));
+            CompletableFuture<Object> future = DATASET_CACHE.get(id, key -> getData(entity, finalParamList));
+            try {
+                return future.get();
+            } catch (Exception e) {
+                log.error("数据集缓存异常：{}", e.getMessage());
+                log.error(ExceptionUtils.getStackTrace(e));
+            }
+
         }
         return getData(entity, finalParamList);
     }
@@ -381,18 +389,26 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
 
     @Override
     public DatasetInfoVO getInfoById(String id) {
-        DatasetEntity entity = this.getById(id);
+        CompletableFuture<DatasetInfoVO> ifPresent = DATASET_INFO_CACHE.getIfPresent(id);
+        if (ifPresent != null) {
+            try {
+                return ifPresent.get();
+            } catch (Exception ignored) {
+            }
+        }
+        DatasetEntity entity = this.getByIdFromCache(id);
         DatasetInfoVO datasetInfoVO = BeanConvertUtils.convert(entity, DatasetInfoVO.class);
         HttpDataSetConfig config = (HttpDataSetConfig) entity.getConfig();
         datasetInfoVO.setFields(config.getFieldList());
         datasetInfoVO.setParams(config.getParamsList());
         datasetInfoVO.setExecutionByFrontend(config.getRequestType().equals(FRONTEND));
+        DATASET_INFO_CACHE.put(id, CompletableFuture.completedFuture(datasetInfoVO));
         return datasetInfoVO;
     }
 
     @Override
     public boolean checkBackendExecutionNeeded(String datasetId) {
-        DatasetEntity entity = this.getById(datasetId);
+        DatasetEntity entity = this.getByIdFromCache(datasetId);
         HttpDataSetConfig config = (HttpDataSetConfig) entity.getConfig();
         return !config.getRequestType().equals(FRONTEND);
     }

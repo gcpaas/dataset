@@ -47,7 +47,7 @@ public class DatasetEntity extends SuperEntity {
     /**
      * 参考 {@link DatasetConstant.DatasetCache}
      */
-    @ApiModelProperty(value = "是否对执行结构缓存 0 不缓存 1 缓存")
+    @ApiModelProperty(value = "是否对执行结果缓存 0 不缓存 1 缓存")
     private Integer cache;
 
     @ApiModelProperty(value = "具体数据集配置")

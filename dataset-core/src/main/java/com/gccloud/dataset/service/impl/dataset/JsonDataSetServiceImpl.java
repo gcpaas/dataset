@@ -57,7 +57,7 @@ public class JsonDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
         if (StringUtils.isBlank(id)) {
             throw new GlobalException("数据集id不能为空");
         }
-        DatasetEntity datasetEntity = this.getById(id);
+        DatasetEntity datasetEntity = this.getByIdFromCache(id);
         if (datasetEntity == null) {
             throw new GlobalException("数据集不存在");
         }

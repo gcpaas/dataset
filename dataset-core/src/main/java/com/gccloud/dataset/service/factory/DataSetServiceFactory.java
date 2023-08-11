@@ -37,7 +37,7 @@ public class DataSetServiceFactory {
      * @return
      */
     public IBaseDataSetService buildById(String id) {
-        DatasetEntity dataset = baseDatasetService.getById(id);
+        DatasetEntity dataset = baseDatasetService.getByIdFromCache(id);
         String datasetType = dataset.getDatasetType();
         return applicationContext.getBean(datasetType, IBaseDataSetService.class);
     }

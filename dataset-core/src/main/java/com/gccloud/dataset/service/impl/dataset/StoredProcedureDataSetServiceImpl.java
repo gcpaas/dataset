@@ -21,10 +21,12 @@ import com.gccloud.dataset.utils.DBUtils;
 import com.gccloud.dataset.vo.DataVO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author hongyang
@@ -74,7 +76,7 @@ public class StoredProcedureDataSetServiceImpl extends ServiceImpl<DatasetDao, D
         if (StringUtils.isBlank(id)) {
             throw new GlobalException("数据集id不能为空");
         }
-        DatasetEntity dataset = this.getById(id);
+        DatasetEntity dataset = this.getByIdFromCache(id);
         StoredProcedureDataSetConfig config = (StoredProcedureDataSetConfig) dataset.getConfig();
         // 存储过程
         String sqlProcess = config.getSqlProcess();
@@ -102,12 +104,18 @@ public class StoredProcedureDataSetServiceImpl extends ServiceImpl<DatasetDao, D
             throw new GlobalException("数据集id不能为空");
         }
         final List<DatasetParamDTO> finalParams = params;
-        DatasetEntity dataset = this.getById(id);
+        DatasetEntity dataset = this.getByIdFromCache(id);
         if (dataset == null) {
             throw new GlobalException("数据集不存在");
         }
         if (DatasetConstant.DatasetCache.OPEN.equals(dataset.getCache())) {
-            return DATASET_CACHE.get(id, key -> getData(finalParams, dataset));
+            CompletableFuture<Object> future = DATASET_CACHE.get(id, key -> getData(finalParams, dataset));
+            try {
+                return future.get();
+            } catch (Exception e) {
+                log.error("数据集缓存异常：{}", e.getMessage());
+                log.error(ExceptionUtils.getStackTrace(e));
+            }
         }
         return getData(finalParams, dataset);
     }

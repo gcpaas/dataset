@@ -15,6 +15,7 @@ import com.gccloud.dataset.service.IBaseDataSetService;
 import com.gccloud.dataset.vo.DataVO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -22,6 +23,7 @@ import javax.annotation.Resource;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author hongyang
@@ -64,12 +66,18 @@ public class GroovyDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
             throw new GlobalException("数据集id不能为空");
         }
         final List<DatasetParamDTO> finalParams = params;
-        DatasetEntity datasetEntity = this.getById(id);
+        DatasetEntity datasetEntity = this.getByIdFromCache(id);
         if (datasetEntity == null) {
             throw new GlobalException("数据集不存在");
         }
         if (DatasetConstant.DatasetCache.OPEN.equals(datasetEntity.getCache())) {
-            return DATASET_CACHE.get(id, key -> getData(finalParams, datasetEntity));
+            CompletableFuture<Object> future = DATASET_CACHE.get(id, key -> getData(finalParams, datasetEntity));
+            try {
+                return future.get();
+            } catch (Exception e) {
+                log.error("数据集缓存异常：{}", e.getMessage());
+                log.error(ExceptionUtils.getStackTrace(e));
+            }
         }
         return getData(finalParams, datasetEntity);
 
