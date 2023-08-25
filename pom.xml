@@ -52,6 +52,8 @@
         <commons-io.version>2.2</commons-io.version>
         <okhttp3.version>4.9.1</okhttp3.version>
         <jackson-bom.version>2.13.3</jackson-bom.version>
+        <mssql-database.version>9.4.0.jre8</mssql-database.version>
+        <vertica.version>10.0.1-0</vertica.version>
     </properties>
 
     <dependencyManagement>

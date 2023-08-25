@@ -52,6 +52,11 @@ public interface DatasetConstant {
         String ORACLE = "oracle";
 
         /**
+         * sqlserver
+         */
+        String SQLSERVER = "sqlserver";
+
+        /**
          * postgresql
          */
         String POSTGRESQL = "postgresql";

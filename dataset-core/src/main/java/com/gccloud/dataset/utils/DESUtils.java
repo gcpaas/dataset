@@ -2,13 +2,12 @@ package com.gccloud.dataset.utils;
 
 import com.gccloud.common.exception.GlobalException;
 import lombok.extern.slf4j.Slf4j;
-import sun.misc.BASE64Decoder;
-import sun.misc.BASE64Encoder;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import java.security.Key;
 import java.security.SecureRandom;
+import java.util.Base64;
 
 /**
  * Description: DES加解密
@@ -55,16 +54,18 @@ public class DESUtils {
         byte[] byteMi;
         byte[] byteMing;
         String strMi;
-        BASE64Encoder base64en = new BASE64Encoder();
+//        BASE64Encoder base64en = new BASE64Encoder();
+        Base64.Encoder encoder = Base64.getEncoder();
         try {
             byteMing = strMing.getBytes(CHARSET);
             byteMi = encryptByte(byteMing);
-            strMi = base64en.encode(byteMi);
+//            strMi = base64en.encode(byteMi);
+            strMi = encoder.encodeToString(byteMi);
         } catch (Exception e) {
             log.error(e.getMessage());
             throw new GlobalException(e.getMessage());
         } finally {
-            base64en = null;
+            encoder = null;
             byteMing = null;
             byteMi = null;
         }
@@ -75,19 +76,21 @@ public class DESUtils {
      * 解密
      */
     public static String getDecryptString(String strMi) {
-        BASE64Decoder base64De = new BASE64Decoder();
+//        BASE64Decoder base64De = new BASE64Decoder();
+        Base64.Decoder decoder = Base64.getDecoder();
         byte[] byteMing;
         byte[] byteMi;
         String strMing;
         try {
-            byteMi = base64De.decodeBuffer(strMi);
+//            byteMi = base64De.decodeBuffer(strMi);
+            byteMi = decoder.decode(strMi);
             byteMing = decryptByte(byteMi);
             strMing = new String(byteMing, CHARSET);
         } catch (Exception e) {
             log.error(e.getMessage());
             throw new GlobalException(e.getMessage());
         } finally {
-            base64De = null;
+            decoder = null;
             byteMing = null;
             byteMi = null;
         }
