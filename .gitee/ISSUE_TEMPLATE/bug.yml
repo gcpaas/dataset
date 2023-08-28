@@ -7,12 +7,12 @@ body:
     attributes:
       value: |
         感谢对项目的支持与关注。在提出问题之前，请确保你已查看相关开发或使用文档：
-        - https://www.yuque.com/chuinixiongkou/bigscreen/index
+        - [https://www.yuque.com/chuinixiongkou/bigscreen/index]https://www.yuque.com/chuinixiongkou/bigscreen/index
   - type: checkboxes
     attributes:
       label: 这个问题是否已经存在？
       options:
-        - label: 我已经搜索过现有的问题 (https://gitee.com/gcpaas/ooxml-excel/issues)
+        - label: 我已经搜索过现有的[问题](https://gitee.com/gcpaas/dataset/issues)
           required: true
   - type: textarea
     attributes:
@@ -61,11 +61,11 @@ body:
       label: 前端软件版本
       description: 你当前正在使用的前端软件版本号是多少？[即您的package.json中的版本号]
     validations:
-        required: false
+      required: false
   - type: input
     id: 后端软件版本
     attributes:
-        label: 后端软件版本
-        description: 你当前正在使用的后端软件版本号是多少？[即您的pom.xml中的版本号]
+      label: 后端软件版本
+      description: 你当前正在使用的后端软件版本号是多少？[即您的pom.xml中的版本号]
     validations:
-        required: false
+      required: false
