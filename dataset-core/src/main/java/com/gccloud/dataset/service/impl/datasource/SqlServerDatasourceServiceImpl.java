@@ -1,9 +1,5 @@
 package com.gccloud.dataset.service.impl.datasource;
 
-import com.alibaba.druid.sql.ast.SQLStatement;
-import com.alibaba.druid.sql.dialect.sqlserver.parser.SQLServerStatementParser;
-import com.alibaba.druid.sql.dialect.sqlserver.visitor.SQLServerSchemaStatVisitor;
-import com.alibaba.druid.stat.TableStat;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.gccloud.common.vo.PageVO;
 import com.gccloud.dataset.constant.DatasetConstant;
@@ -11,13 +7,11 @@ import com.gccloud.dataset.dao.DatasourceDao;
 import com.gccloud.dataset.entity.DatasourceEntity;
 import com.gccloud.dataset.service.IBaseDatasourceService;
 import com.gccloud.dataset.utils.DBUtils;
-import com.gccloud.dataset.vo.DataVO;
-import com.gccloud.dataset.vo.DbDataVO;
-import com.gccloud.dataset.vo.FieldInfoVO;
-import com.gccloud.dataset.vo.TableInfoVO;
+import com.gccloud.dataset.vo.*;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,7 +19,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * sqlserver数据源服务实现类
+ * @author wangkang
+ * @version 1.0.1
+ * @date 2023/8/25
  */
 @Slf4j
 @Service(DatasetConstant.DatasourceType.SQLSERVER)
@@ -50,24 +46,7 @@ public class SqlServerDatasourceServiceImpl extends ServiceImpl<DatasourceDao, D
         // 组装分页sql
         int start = (current - 1) * size;
 
-        // 查询表的字段
-        String[] forms = sql.split("FROM");
-        // 使用druid的sql解析，获取查询的数据库名称
-        SQLServerStatementParser parser = new SQLServerStatementParser(sql);
-        SQLStatement sqlStatement = parser.parseStatement();
-        SQLServerSchemaStatVisitor visitor = new SQLServerSchemaStatVisitor();
-        sqlStatement.accept(visitor);
-        Map<TableStat.Name, TableStat> tables = visitor.getTables();
-        List<String> allTableName = Lists.newArrayList();
-        for (TableStat.Name t : tables.keySet()) {
-            allTableName.add(t.getName());
-        }
-
-        log.info("查询的表名称:{}", allTableName.get(0));
-        // 字段需要从数据库中查询
-        List<FieldInfoVO> tableColumnList = this.getTableColumnList(datasource, allTableName.get(0));
-        String columnName = tableColumnList.get(0).getColumnName();
-        String pageSql = "select * from (" + sql + ") as t order by " + columnName + " offset "+ start +" rows fetch next " + 10 + " rows only";
+        String pageSql = "select * from (" + sql + ") as t order by 1 offset "+ start +" rows fetch next " + 10 + " rows only";
         log.info("数据集数据详情分页 sql语句：{}", pageSql);
         DbDataVO pageData = DBUtils.getSqlValue(pageSql, datasource);
         PageVO<Map<String, Object>> page = new PageVO<>();
@@ -81,7 +60,14 @@ public class SqlServerDatasourceServiceImpl extends ServiceImpl<DatasourceDao, D
 
     @Override
     public List<TableInfoVO> getTableList(DatasourceEntity datasource) {
-        String sql = "select * from sysobjects where type='U'";
+        // 从url中获取模式名称，可能不存在
+        String schema = this.getSchemaFromUrl(datasource.getUrl());
+        String sql = "SELECT TABLE_CATALOG as tableCatalog, TABLE_SCHEMA as tableSchema, TABLE_NAME as name\n" +
+                "FROM INFORMATION_SCHEMA.TABLES\n" +
+                "WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_CATALOG = DB_NAME()";
+        if (StringUtils.isNotBlank(schema)) {
+            sql += " AND TABLE_SCHEMA = '" + schema + "'";
+        }
         DbDataVO dataVO = DBUtils.getSqlValue(sql, datasource);
         List<Map<String, Object>> data = dataVO.getData();
         List<TableInfoVO> tableList = Lists.newArrayList();
@@ -89,9 +75,15 @@ public class SqlServerDatasourceServiceImpl extends ServiceImpl<DatasourceDao, D
             return tableList;
         }
         for (Map<String, Object> map : data) {
-            TableInfoVO tableInfoVO = new TableInfoVO();
-            tableInfoVO.setName(String.valueOf(map.get("name")));
+            TableInfoVOExtend tableInfoVO = new TableInfoVOExtend();
+            String name = String.valueOf(map.get("name"));
+            if (map.get("tableSchema") != null) {
+                name = map.get("tableSchema") + "." + name;
+            }
+            tableInfoVO.setName(name);
             tableInfoVO.setStatus(0);
+            tableInfoVO.setTableCatalog(String.valueOf(map.get("tableCatalog")));
+            tableInfoVO.setTableSchema(String.valueOf(map.get("tableSchema")));
             tableList.add(tableInfoVO);
         }
         return tableList;
@@ -99,7 +91,14 @@ public class SqlServerDatasourceServiceImpl extends ServiceImpl<DatasourceDao, D
 
     @Override
     public List<TableInfoVO> getViewList(DatasourceEntity datasource) {
-        String sql = "SELECT name FROM sys.views";
+        // 从url中获取模式名称，可能不存在
+        String schema = this.getSchemaFromUrl(datasource.getUrl());
+        String sql = "SELECT TABLE_CATALOG as tableCatalog, TABLE_SCHEMA as tableSchema, TABLE_NAME as name\n" +
+                "FROM INFORMATION_SCHEMA.TABLES\n" +
+                "WHERE TABLE_TYPE = 'VIEW' AND TABLE_CATALOG = DB_NAME()";
+        if (StringUtils.isNotBlank(schema)) {
+            sql += " AND TABLE_SCHEMA = '" + schema + "'";
+        }
         DbDataVO dataVO = DBUtils.getSqlValue(sql, datasource);
         List<Map<String, Object>> data = dataVO.getData();
         List<TableInfoVO> tableInfoVOS = Lists.newArrayList();
@@ -107,17 +106,39 @@ public class SqlServerDatasourceServiceImpl extends ServiceImpl<DatasourceDao, D
             return tableInfoVOS;
         }
         for (Map<String, Object> map : data) {
-            TableInfoVO tableInfoVO = new TableInfoVO();
-            tableInfoVO.setName(String.valueOf(map.get("name")));
+            TableInfoVOExtend tableInfoVO = new TableInfoVOExtend();
+            String name = String.valueOf(map.get("name"));
+            if (map.get("tableSchema") != null) {
+                name = map.get("tableSchema") + "." + name;
+            }
+            tableInfoVO.setName(name);
             tableInfoVO.setStatus(0);
+            tableInfoVO.setTableCatalog(String.valueOf(map.get("tableCatalog")));
+            tableInfoVO.setTableSchema(String.valueOf(map.get("tableSchema")));
             tableInfoVOS.add(tableInfoVO);
         }
         return tableInfoVOS;
     }
 
     @Override
-    public List<FieldInfoVO> getTableColumnList(DatasourceEntity datasource, String tableName) {
+    public List<FieldInfoVO> getTableColumnList(DatasourceEntity datasource, String fullTableName) {
+        String schema = "";
+        String tableName = "";
+        // fullTableName 可能是 database.schema.tableName、schema.tableName、tableName
+        String[] split = fullTableName.split("\\.");
+        if (split.length == 1) {
+            tableName = split[0];
+        } else if (split.length == 2) {
+            schema = split[0];
+            tableName = split[1];
+        } else if (split.length == 3) {
+            schema = split[1];
+            tableName = split[2];
+        }
         String sql = "select * from information_schema.columns where table_name = '" + tableName + "'";
+        if (StringUtils.isNotBlank(schema)) {
+            sql += " and table_schema = '" + schema + "'";
+        }
         DbDataVO dataVO = DBUtils.getSqlValue(sql, datasource);
         List<Map<String, Object>> data = dataVO.getData();
         List<FieldInfoVO> fieldInfoVOS = Lists.newArrayList();
@@ -126,6 +147,9 @@ public class SqlServerDatasourceServiceImpl extends ServiceImpl<DatasourceDao, D
         }
         // 获取表中字段注释
         String columnDescSql = "select a.name  table_name,b.name  column_name, c.value  column_description from sys.tables a inner join sys.columns b on b.object_id = a.object_id left join sys.extended_properties c on c.major_id = b.object_id and c.minor_id = b.column_id where a.name = '" + tableName + "'";
+        if (StringUtils.isNotBlank(schema)) {
+            columnDescSql += " and a.schema_id = schema_id('" + schema + "')";
+        }
         DbDataVO sqlValue = DBUtils.getSqlValue(columnDescSql, datasource);
         List<Map<String, Object>> columnDescMap = sqlValue.getData();
         List<FieldInfoVO> columnDescList = Lists.newArrayList();
@@ -154,5 +178,22 @@ public class SqlServerDatasourceServiceImpl extends ServiceImpl<DatasourceDao, D
             return new DataVO(dbDataVO.getPageData(), dbDataVO.getStructure());
         }
         return new DataVO(dbDataVO.getData(), dbDataVO.getStructure());
+    }
+
+
+    /**
+     * 从url中获取schema
+     * @param url
+     * @return
+     */
+    private String getSchemaFromUrl(String url) {
+        String[] split = url.split(";");
+        String schema = "";
+        for (String s : split) {
+            if (s.contains("schema=")) {
+                schema = s.split("=")[1];
+            }
+        }
+        return schema;
     }
 }
