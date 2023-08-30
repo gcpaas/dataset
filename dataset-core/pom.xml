@@ -84,13 +84,19 @@
             <artifactId>mssql-jdbc</artifactId>
             <version>${mssql-database.version}</version>
         </dependency>
-
         <!--  vertica驱动  -->
         <dependency>
             <groupId>com.vertica.jdbc</groupId>
             <artifactId>vertica-jdbc</artifactId>
             <version>${vertica.version}</version>
         </dependency>
+        <!--  es客户端  -->
+        <dependency>
+            <groupId>co.elastic.clients</groupId>
+            <artifactId>elasticsearch-java</artifactId>
+            <version>8.0.1</version>
+        </dependency>
+
     </dependencies>
 
 </project>

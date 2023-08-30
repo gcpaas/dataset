@@ -187,14 +187,12 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
     default DatasetEntity getByIdFromCache(String id) {
         CompletableFuture<DatasetEntity> future = DATASET_ENTITY_CACHE.get(id, key -> {
             DatasetEntity entity = this.getById(id);
-            System.out.println("查询数据库");
             return entity;
         });
         try {
             return future.get();
         } catch (Exception ignored) {
         }
-        System.out.println("查询数据库");
         DatasetEntity entity = this.getById(id);
         DATASET_ENTITY_CACHE.put(id, CompletableFuture.completedFuture(entity));
         return entity;
