@@ -3,6 +3,7 @@ package com.gccloud.dataset.utils;
 import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLStatement;
+import com.alibaba.druid.sql.ast.statement.SQLSelectStatement;
 import com.alibaba.druid.sql.ast.statement.SQLUseStatement;
 import com.alibaba.druid.sql.visitor.SchemaStatVisitor;
 import com.alibaba.druid.stat.TableStat;
@@ -235,6 +236,10 @@ public class DBUtils {
      */
     public static DbDataVO getSqlValue(String sql, DatasourceEntity datasource) {
         log.info("执行sql:" + sql);
+        boolean onlySelectSql = DBUtils.onlySelectSql(sql, datasource.getSourceType());
+        if (!onlySelectSql) {
+            throw new GlobalException("只支持select语句");
+        }
         Connection connection = getConnection(datasource);
         if (connection == null) {
             throw new GlobalException("数据源连接建立失败");
@@ -452,6 +457,40 @@ public class DBUtils {
             }
         }
         return tableNames;
+    }
+
+
+    /**
+     * 检查SQL语句，只允许存在select语句
+     * @param sql
+     * @param datasourceType
+     * @return
+     */
+    public static boolean onlySelectSql(String sql, String datasourceType) {
+        DbType jdbcType;
+        switch (datasourceType.toLowerCase()) {
+            case DatasetConstant.DatasourceType.MYSQL:
+                jdbcType = JdbcConstants.MYSQL;
+                break;
+            case DatasetConstant.DatasourceType.ORACLE:
+                jdbcType = JdbcConstants.ORACLE;
+                break;
+            case DatasetConstant.DatasourceType.POSTGRESQL:
+                jdbcType = JdbcConstants.POSTGRESQL;
+                break;
+            case DatasetConstant.DatasourceType.CLICKHOUSE:
+                jdbcType = JdbcConstants.CLICKHOUSE;
+                break;
+            default:
+                return false;
+        }
+        List<SQLStatement> stmts = SQLUtils.parseStatements(sql, jdbcType);
+        for (SQLStatement stmt : stmts) {
+            if (!(stmt instanceof SQLSelectStatement)) {
+                return false;
+            }
+        }
+        return true;
     }
 
 }
