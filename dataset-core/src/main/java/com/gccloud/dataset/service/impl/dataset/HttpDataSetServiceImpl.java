@@ -177,8 +177,8 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
                 }
                 for (DatasetParamDTO param : paramList) {
                     if (value.contains(param.getName())) {
-                        this.parameterReplace(param, value);
-                        header.put("value", value);
+                        String replaceValue = this.parameterReplace(param, value);
+                        header.put("value", replaceValue);
                     }
                 }
             }
@@ -197,8 +197,8 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
                 }
                 for (DatasetParamDTO paramDTO : paramList) {
                     if (value.contains(paramDTO.getName())) {
-                        this.parameterReplace(paramDTO, value);
-                        param.put("value", value);
+                        String replaceValue = this.parameterReplace(paramDTO, value);
+                        param.put("value", replaceValue);
                     }
                 }
             }
