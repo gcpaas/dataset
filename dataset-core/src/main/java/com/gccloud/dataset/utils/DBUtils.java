@@ -240,6 +240,29 @@ public class DBUtils {
         if (!onlySelectSql) {
             throw new GlobalException("只支持select语句");
         }
+        return executeSql(sql, datasource);
+
+    }
+
+    /**
+     * 执行sql，获取数据以及列信息，不检查sql是否为select语句
+     * @param sql
+     * @param datasource
+     * @return
+     */
+    public static DbDataVO getSqlValueWithoutCheck(String sql, DatasourceEntity datasource) {
+        log.info("执行sql:" + sql);
+        return executeSql(sql, datasource);
+    }
+
+
+    /**
+     * 执行sql
+     * @param sql
+     * @param datasource
+     * @return
+     */
+    public static DbDataVO executeSql(String sql, DatasourceEntity datasource) {
         Connection connection = getConnection(datasource);
         if (connection == null) {
             throw new GlobalException("数据源连接建立失败");
@@ -283,6 +306,8 @@ public class DBUtils {
         }
         return dataVO;
     }
+
+
 
 
     /**
@@ -481,8 +506,12 @@ public class DBUtils {
             case DatasetConstant.DatasourceType.CLICKHOUSE:
                 jdbcType = JdbcConstants.CLICKHOUSE;
                 break;
+            case DatasetConstant.DatasourceType.SQLSERVER:
+                jdbcType = JdbcConstants.SQL_SERVER;
+                break;
             default:
-                return false;
+                // 对于其他类型的数据源，暂不做校验
+                return true;
         }
         List<SQLStatement> stmts = SQLUtils.parseStatements(sql, jdbcType);
         for (SQLStatement stmt : stmts) {

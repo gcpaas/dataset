@@ -75,7 +75,7 @@ public class MysqlDatasourceServiceImpl extends ServiceImpl<DatasourceDao, Datas
     @Override
     public List<TableInfoVO> getTableList(DatasourceEntity datasource) {
         String sql = "show tables";
-        DbDataVO dataVO = DBUtils.getSqlValue(sql, datasource);
+        DbDataVO dataVO = DBUtils.getSqlValueWithoutCheck(sql, datasource);
         List<Map<String, Object>> data = dataVO.getData();
         List<TableInfoVO> tableList = Lists.newArrayList();
         if (data == null || data.size() == 0) {
@@ -96,7 +96,7 @@ public class MysqlDatasourceServiceImpl extends ServiceImpl<DatasourceDao, Datas
     @Override
     public List<FieldInfoVO> getTableColumnList(DatasourceEntity datasource, String tableName) {
         String sql = "show full columns from " + tableName;
-        DbDataVO dataVO = DBUtils.getSqlValue(sql, datasource);
+        DbDataVO dataVO = DBUtils.getSqlValueWithoutCheck(sql, datasource);
         List<Map<String, Object>> data = dataVO.getData();
         List<FieldInfoVO> fieldList = Lists.newArrayList();
         if (data == null || data.size() == 0) {
@@ -115,7 +115,7 @@ public class MysqlDatasourceServiceImpl extends ServiceImpl<DatasourceDao, Datas
     @Override
     public List<TableInfoVO> getViewList(DatasourceEntity datasource) {
         String sql = "show table status where comment='view'";
-        DbDataVO dataVO = DBUtils.getSqlValue(sql, datasource);
+        DbDataVO dataVO = DBUtils.getSqlValueWithoutCheck(sql, datasource);
         List<Map<String, Object>> data = dataVO.getData();
         List<TableInfoVO> tableList = Lists.newArrayList();
         if (data == null || data.size() == 0) {

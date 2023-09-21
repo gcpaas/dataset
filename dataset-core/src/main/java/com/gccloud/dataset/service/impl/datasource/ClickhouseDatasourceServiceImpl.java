@@ -72,7 +72,7 @@ public class ClickhouseDatasourceServiceImpl extends ServiceImpl<DatasourceDao, 
     @Override
     public List<TableInfoVO> getTableList(DatasourceEntity datasource) {
         String sql = "show tables";
-        DbDataVO dataVO = DBUtils.getSqlValue(sql, datasource);
+        DbDataVO dataVO = DBUtils.getSqlValueWithoutCheck(sql, datasource);
         List<Map<String, Object>> data = dataVO.getData();
         List<TableInfoVO> tableList = Lists.newArrayList();
         if (data == null || data.size() == 0) {
