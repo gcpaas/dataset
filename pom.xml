@@ -8,8 +8,26 @@
     <version>1.0.1.2023100901.Alpha</version>
 
     <packaging>pom</packaging>
+    <name>dataset</name>
+    <url>https://github.com/gcpaas/dataset</url>
     <description>数据集</description>
-
+    <!--开源协议...-->
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+    <scm>
+        <url>https://github.com/gcpaas/dataset</url>
+    </scm>
+    <developers>
+        <developer>
+            <id>gcpaas</id>
+            <name>shi-qing-huan</name>
+            <email>hong.yang@ustcinfo.com</email>
+        </developer>
+    </developers>
     <modules>
         <module>dataset-common</module>
         <module>dataset-core</module>
