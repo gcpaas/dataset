@@ -1,6 +1,7 @@
 package com.gccloud.dataset.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.gccloud.common.exception.GlobalException;
 import com.gccloud.common.service.ISuperService;
 import com.gccloud.common.utils.BeanConvertUtils;
@@ -144,10 +145,11 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
      */
     default boolean checkNameRepeat(String id, String name, String moduleCode) {
         LambdaQueryWrapper<DatasetEntity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.select(DatasetEntity::getId);
         queryWrapper.eq(DatasetEntity::getName, name);
         queryWrapper.eq(StringUtils.isNotBlank(moduleCode), DatasetEntity::getModuleCode, moduleCode);
         queryWrapper.ne(StringUtils.isNotBlank(id), DatasetEntity::getId, id);
-        return this.count(queryWrapper) > 0;
+        return this.list(queryWrapper).size() > 0;
     }
 
 

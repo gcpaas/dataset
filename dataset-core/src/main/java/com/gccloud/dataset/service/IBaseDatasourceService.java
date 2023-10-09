@@ -136,10 +136,11 @@ public interface IBaseDatasourceService extends ISuperService<DatasourceEntity> 
      */
     default boolean checkNameRepeat(String id, String name, String moduleCode) {
         LambdaQueryWrapper<DatasourceEntity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.select(DatasourceEntity::getId);
         queryWrapper.eq(DatasourceEntity::getSourceName, name);
         queryWrapper.eq(StringUtils.isNotBlank(moduleCode), DatasourceEntity::getModuleCode, moduleCode);
         queryWrapper.ne(StringUtils.isNotBlank(id), DatasourceEntity::getId, id);
-        return this.count(queryWrapper) > 0;
+        return this.list(queryWrapper).size() > 0;
     }
 
     /**

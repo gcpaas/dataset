@@ -1,11 +1,9 @@
 package com.gccloud.dataset.dto;
 
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.gccloud.dataset.entity.DatasetLabelEntity;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.gccloud.common.utils.EmptyAsNullDeserializer;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
-
-import java.util.List;
 
 /**
  * @author hongyang
@@ -15,6 +13,7 @@ import java.util.List;
 @Data
 public class LabelDTO {
 
+    @JsonDeserialize(using = EmptyAsNullDeserializer.class)
     @ApiModelProperty(notes = "主键")
     private String id;
 

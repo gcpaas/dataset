@@ -217,6 +217,7 @@ public class DBUtils {
             dataVO.setPageData(pageData);
         } catch (Exception ex) {
             log.error("存储过程执行失败 ，{}", ex.getMessage());
+            log.error(ExceptionUtils.getStackTrace(ex));
             throw new GlobalException(ex.getMessage());
         } finally {
             try {

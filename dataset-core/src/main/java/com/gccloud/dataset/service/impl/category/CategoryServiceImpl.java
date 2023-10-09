@@ -98,9 +98,9 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
     @Override
     public void delete(String id) {
         LambdaQueryWrapper<CategoryEntity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.select(CategoryEntity::getId);
         queryWrapper.eq(CategoryEntity::getParentId, id);
-        int count = this.count(queryWrapper);
-        if (count > 0) {
+        if (this.list(queryWrapper).size() > 0) {
             throw new GlobalException("该节点下存在子节点，无法删除");
         }
         this.removeById(id);
@@ -109,6 +109,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
     @Override
     public boolean checkNameRepeat(CategoryEntity entity) {
         LambdaQueryWrapper<CategoryEntity> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.select(CategoryEntity::getId);
         queryWrapper.eq(CategoryEntity::getName, entity.getName());
         queryWrapper.eq(StringUtils.isNotBlank(entity.getModuleCode()), CategoryEntity::getModuleCode, entity.getModuleCode());
         queryWrapper.eq(StringUtils.isNotBlank(entity.getType()), CategoryEntity::getType, entity.getType());
@@ -118,7 +119,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         } else {
             queryWrapper.eq(CategoryEntity::getParentId, entity.getParentId());
         }
-        int count = this.count(queryWrapper);
-        return count > 0;
+        // NOTE 为了兼容mybatis-plus的升级，这里不能使用count()方法
+        return this.list(queryWrapper).size() > 0;
     }
 }

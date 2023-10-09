@@ -1,7 +1,9 @@
 package com.gccloud.common.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.gccloud.common.constant.CommonConst;
+import com.gccloud.common.utils.EmptyAsNullDeserializer;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -18,6 +20,7 @@ import java.util.Date;
 public class SuperEntity implements Serializable {
 
     @TableId
+    @JsonDeserialize(using = EmptyAsNullDeserializer.class)
     @ApiModelProperty(notes = "主键")
     private String id;
 

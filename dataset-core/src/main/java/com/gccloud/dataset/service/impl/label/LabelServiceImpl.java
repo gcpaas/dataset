@@ -148,10 +148,10 @@ public class LabelServiceImpl extends ServiceImpl<LabelDao, LabelEntity> impleme
     @Override
     public boolean checkRepeat(LabelEntity labelEntity) {
         LambdaQueryWrapper<LabelEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.select(LabelEntity::getId);
         wrapper.eq(LabelEntity::getLabelName, labelEntity.getLabelName());
         wrapper.ne(StringUtils.isNotBlank(labelEntity.getId()), LabelEntity::getId, labelEntity.getId());
-        int count = this.count(wrapper);
-        return count > 0;
+        return this.list(wrapper).size() > 0;
     }
 
     @Override
@@ -174,9 +174,9 @@ public class LabelServiceImpl extends ServiceImpl<LabelDao, LabelEntity> impleme
         }
         // 先检查数据集与标签的关联
         LambdaQueryWrapper<DatasetLabelEntity> datasetLabelWrapper = new LambdaQueryWrapper<>();
+        datasetLabelWrapper.select(DatasetLabelEntity::getLabelId);
         datasetLabelWrapper.in(DatasetLabelEntity::getLabelId, idList);
-        int count = datasetLabelService.count(datasetLabelWrapper);
-        if (count > 0) {
+        if (datasetLabelService.list(datasetLabelWrapper).size() > 0) {
             throw new GlobalException("该标签类型下存在数据集与标签的关联，无法删除");
         }
         // 删除标签
@@ -189,10 +189,10 @@ public class LabelServiceImpl extends ServiceImpl<LabelDao, LabelEntity> impleme
             return;
         }
         LambdaQueryWrapper<LabelEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.select(LabelEntity::getId);
         wrapper.eq(LabelEntity::getLabelType, newLabelType);
         wrapper.ne(LabelEntity::getLabelType, oldLabelType);
-        int count = this.count(wrapper);
-        if (count > 0) {
+        if (this.list(wrapper).size() > 0) {
             throw new GlobalException("标签类型已存在");
         }
         LambdaUpdateWrapper<LabelEntity> updateWrapper = new LambdaUpdateWrapper<>();

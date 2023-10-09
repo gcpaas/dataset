@@ -181,9 +181,10 @@ public class DatasetController {
         List<String> typeIds = list.stream().map(CategoryEntity::getId).collect(Collectors.toList());
         typeIds.add(typeId);
         LambdaQueryWrapper<DatasetEntity> datasetQueryWrapper = new LambdaQueryWrapper<>();
+        datasetQueryWrapper.select(DatasetEntity::getId);
         datasetQueryWrapper.in(DatasetEntity::getTypeId, typeIds);
-        int count = baseDatasetService.count(datasetQueryWrapper);
-        return R.success(count);
+        List<DatasetEntity> sizeList = baseDatasetService.list(datasetQueryWrapper);
+        return R.success(sizeList.size());
     }
 
 
