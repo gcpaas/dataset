@@ -2,6 +2,7 @@ package com.gccloud.dataset.service.impl.dataset;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.gccloud.common.exception.GlobalException;
+import com.gccloud.common.utils.JSON;
 import com.gccloud.common.vo.PageVO;
 import com.gccloud.dataset.constant.DatasetConstant;
 import com.gccloud.dataset.dao.DatasetDao;
@@ -76,6 +77,7 @@ public class StoredProcedureDataSetServiceImpl extends ServiceImpl<DatasetDao, D
         if (StringUtils.isBlank(id)) {
             throw new GlobalException("数据集id不能为空");
         }
+        long startTime = System.currentTimeMillis();
         DatasetEntity dataset = this.getByIdFromCache(id);
         StoredProcedureDataSetConfig config = (StoredProcedureDataSetConfig) dataset.getConfig();
         // 存储过程
@@ -89,12 +91,15 @@ public class StoredProcedureDataSetServiceImpl extends ServiceImpl<DatasetDao, D
         DatasourceEntity datasource = datasourceService.getInfoById(config.getSourceId());
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
         // 执行存储过程
+        log.info("执行【{}】数据集（类型：【存储过程】，ID:【{}】）， 参数：【{}】， URL：【{}】， 执行SQL：【{}】", dataset.getName(), dataset.getId(), JSON.toJSONString(params), datasource.getUrl(), sqlProcess);
         DataVO dataVO = buildService.executeProcedure(datasource, sqlProcess, current, size);
         PageVO data = (PageVO) dataVO.getData();
         List list = data.getList();
         // 自定义数据处理
         list = datasetExtendClient.handleData(list, dataset);
         data.setList(list);
+        long endTime = System.currentTimeMillis();
+        log.info("执行【{}】数据集（类型：【存储过程】，ID:【{}】）结束，耗时：【{}】毫秒", dataset.getName(), dataset.getId(), endTime - startTime);
         return data;
     }
 
@@ -127,6 +132,7 @@ public class StoredProcedureDataSetServiceImpl extends ServiceImpl<DatasetDao, D
      * @return
      */
     private Object getData(List<DatasetParamDTO> finalParams, DatasetEntity dataset) {
+        long startTime = System.currentTimeMillis();
         StoredProcedureDataSetConfig config = (StoredProcedureDataSetConfig) dataset.getConfig();
         // 存储过程
         String sqlProcess = config.getSqlProcess();
@@ -139,10 +145,13 @@ public class StoredProcedureDataSetServiceImpl extends ServiceImpl<DatasetDao, D
         DatasourceEntity datasource = datasourceService.getInfoById(config.getSourceId());
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
         // 执行存储过程
+        log.info("执行【{}】数据集（类型：【存储过程】，ID:【{}】）， 参数：【{}】， URL：【{}】， 执行SQL：【{}】", dataset.getName(), dataset.getId(), JSON.toJSONString(finalParams), datasource.getUrl(), sqlProcess);
         DataVO dataVO = buildService.executeProcedure(datasource, sqlProcess, null, null);
         List list = (List) dataVO.getData();
         // 自定义数据处理
         list = datasetExtendClient.handleData(list, dataset);
+        long endTime = System.currentTimeMillis();
+        log.info("执行【{}】数据集（类型：【存储过程】，ID:【{}】）结束，耗时：【{}】毫秒", dataset.getName(), dataset.getId(), endTime - startTime);
         return list;
     }
 
@@ -152,6 +161,7 @@ public class StoredProcedureDataSetServiceImpl extends ServiceImpl<DatasetDao, D
         if (StringUtils.isBlank(sqlProcess)) {
             throw new GlobalException("存储过程执行语句不能为空");
         }
+        long startTime = System.currentTimeMillis();
         List<DatasetParamDTO> params = executeDTO.getParams();
         // 脚本预处理
         sqlProcess = paramsClient.handleScript(executeDTO.getDataSetType(), sqlProcess);
@@ -164,6 +174,7 @@ public class StoredProcedureDataSetServiceImpl extends ServiceImpl<DatasetDao, D
         DataVO dataVO;
         Integer current = executeDTO.getCurrent();
         Integer size = executeDTO.getSize();
+        log.info("测试数据集（类型：【存储过程】），参数：【{}】， URL：【{}】， 执行SQL：【{}】", JSON.toJSONString(params), datasource.getUrl(), sqlProcess);
         if (current != null && size != null) {
             // 执行存储过程
             dataVO = buildService.executeProcedure(datasource, sqlProcess, current, size);
@@ -171,6 +182,8 @@ public class StoredProcedureDataSetServiceImpl extends ServiceImpl<DatasetDao, D
             // 执行存储过程
             dataVO = buildService.executeProcedure(datasource, sqlProcess, null, null);
         }
+        long endTime = System.currentTimeMillis();
+        log.info("测试数据集（类型：【存储过程】）结束，耗时：【{}】毫秒", endTime - startTime);
         return dataVO;
     }
 }

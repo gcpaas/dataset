@@ -84,6 +84,7 @@ public class OriginalDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetE
         if (entity == null) {
             throw new GlobalException("数据集不存在");
         }
+        long startTime = System.currentTimeMillis();
         OriginalDataSetConfig config = (OriginalDataSetConfig) entity.getConfig();
         String fieldInfo = config.getFieldInfo();
         if (StringUtils.isBlank(fieldInfo)) {
@@ -98,12 +99,15 @@ public class OriginalDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetE
         }
         String sql = "SELECT " + fieldInfo + " FROM " + config.getTableName();
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
+        log.info("执行【{}】数据集（类型：【原始】，ID:【{}】）， URL：【{}】， 执行SQL：【{}】", entity.getName(), entity.getId(), datasource.getUrl(), sql);
         DataVO dataVO = buildService.executeSqlPage(datasource, sql, current, size);
         PageVO data = (PageVO) dataVO.getData();
         List list = data.getList();
         // 自定义数据处理
         list = datasetExtendClient.handleData(list, entity);
         data.setList(list);
+        long endTime = System.currentTimeMillis();
+        log.info("执行【{}】数据集（类型：【原始】，ID:【{}】），耗时：【{}】ms", entity.getName(), entity.getId(), endTime - startTime);
         return data;
     }
 
@@ -134,6 +138,7 @@ public class OriginalDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetE
      * @return
      */
     private Object getData(DatasetEntity entity) {
+        long startTime = System.currentTimeMillis();
         OriginalDataSetConfig config = (OriginalDataSetConfig) entity.getConfig();
         String fieldInfo = config.getFieldInfo();
         if (StringUtils.isBlank(fieldInfo)) {
@@ -147,11 +152,14 @@ public class OriginalDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetE
             fieldInfo = "DISTINCT " + fieldInfo;
         }
         String sql = "SELECT " + fieldInfo + " FROM " + config.getTableName();
+        log.info("执行【{}】数据集（类型：【原始】，ID:【{}】）， URL：【{}】， 执行SQL：【{}】", entity.getName(), entity.getId(), datasource.getUrl(), sql);
         IBaseDatasourceService buildService = datasourceServiceFactory.build(sourceType);
         DataVO dataVO = buildService.executeSql(datasource, sql);
         List list = (List) dataVO.getData();
         // 自定义数据处理
         list = datasetExtendClient.handleData(list, entity);
+        long endTime = System.currentTimeMillis();
+        log.info("执行【{}】数据集（类型：【原始】，ID:【{}】），耗时：【{}】ms", entity.getName(), entity.getId(), endTime - startTime);
         return list;
     }
 
@@ -161,6 +169,7 @@ public class OriginalDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetE
         if (StringUtils.isBlank(jsonString)) {
             throw new GlobalException("数据集配置异常");
         }
+        long startTime = System.currentTimeMillis();
         JSONObject originalTest = JSON.parseObject(jsonString);
         JSONArray fieldArray = originalTest.getJSONArray("fieldInfo");
         // 逗号分隔
@@ -187,11 +196,14 @@ public class OriginalDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetE
         DataVO dataVO;
         Integer current = executeDTO.getCurrent();
         Integer size = executeDTO.getSize();
+        log.info("测试数据集（类型：【原始】）， URL：【{}】， 执行SQL：【{}】", datasource.getUrl(), sql);
         if (size != null && current != null) {
             dataVO = buildService.executeSqlPage(datasource, sql, current, size);
         } else {
             dataVO = buildService.executeSql(datasource, sql);
         }
+        long endTime = System.currentTimeMillis();
+        log.info("测试数据集（类型：【原始】）结束，耗时：【{}】ms",  endTime - startTime);
         return dataVO;
     }
 

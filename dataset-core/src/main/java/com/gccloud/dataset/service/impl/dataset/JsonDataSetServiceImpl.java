@@ -61,6 +61,7 @@ public class JsonDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
         if (datasetEntity == null) {
             throw new GlobalException("数据集不存在");
         }
+        log.info("执行【{}】数据集（类型：【JSON】，ID:【{}】）", datasetEntity.getName(), datasetEntity.getId());
         JsonDataSetConfig config = (JsonDataSetConfig) datasetEntity.getConfig();
         String json = config.getJson();
         Object object = null;

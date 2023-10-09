@@ -3,6 +3,7 @@ package com.gccloud.dataset.service.impl.dataset;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.gccloud.common.exception.GlobalException;
 import com.gccloud.common.utils.GroovyUtils;
+import com.gccloud.common.utils.JSON;
 import com.gccloud.dataset.constant.DatasetConstant;
 import com.gccloud.dataset.dao.DatasetDao;
 import com.gccloud.dataset.dto.DatasetParamDTO;
@@ -90,12 +91,17 @@ public class GroovyDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
      * @return
      */
     private Object getData(List<DatasetParamDTO> finalParams, DatasetEntity datasetEntity) {
+        long startTime = System.currentTimeMillis();
         GroovyDataSetConfig config = (GroovyDataSetConfig) datasetEntity.getConfig();
         String script = config.getScript();
         // 参数预处理
         List<DatasetParamDTO> paramList = paramsClient.handleParams(finalParams);
         Map<String, Object> paramMap = this.buildParams(paramList, script);
-        return GroovyUtils.run(script, paramMap);
+        log.info("执行【{}】数据集（类型：【脚本】，ID:【{}】）， 参数：【{}】，", datasetEntity.getName(), datasetEntity.getId(), JSON.toJSONString(finalParams));
+        Object run = GroovyUtils.run(script, paramMap);
+        long endTime = System.currentTimeMillis();
+        log.info("执行【{}】数据集（类型：【脚本】，ID:【{}】）结束，耗时：【{}】ms", datasetEntity.getName(), datasetEntity.getId(), endTime - startTime);
+        return run;
     }
 
 
@@ -105,12 +111,16 @@ public class GroovyDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
         if (StringUtils.isBlank(script)) {
             throw new GlobalException("脚本不能为空");
         }
+        long startTime = System.currentTimeMillis();
         List<DatasetParamDTO> params = executeDTO.getParams();
         // 参数预处理
         params = paramsClient.handleParams(params);
         Map<String, Object> paramMap = this.buildParams(params, script);
         DataVO dataVO = new DataVO();
+        log.info("测试数据集（类型：【脚本】）， 参数：【{}】， 执行脚本：【{}】", JSON.toJSONString(params), script);
         dataVO.setData(GroovyUtils.run(script, paramMap));
+        long endTime = System.currentTimeMillis();
+        log.info("测试数据集（类型：【脚本】）结束，耗时：【{}】ms", endTime - startTime);
         return dataVO;
     }
 

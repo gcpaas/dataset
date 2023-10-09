@@ -112,6 +112,7 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
         List<DatasetParamDTO> params = paramsClient.handleParams(finalParamList);
         config = this.handleParams(config, params);
         if (config.getRequestType().equals(FRONTEND)) {
+            log.info("执行【{}】数据集（类型：【HTTP】，ID:【{}】）， 方式：【前端代理】， 类型：【{}】， URL：【{}】", entity.getName(), entity.getId(), config.getMethod(), config.getUrl());
             // 将params替换掉config中的值
             if (params!=null && !params.isEmpty()) {
                 List<DatasetParamDTO> configParams = config.getParamsList();
@@ -127,7 +128,7 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
             }
             return config;
         }
-        return this.getBackendData(config);
+        return this.getBackendData(config, entity);
     }
 
 
@@ -148,7 +149,7 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
             dataVO.setData(config);
             return dataVO;
         }
-        Object data = this.getBackendData(config);
+        Object data = this.getBackendData(config, null);
         dataVO.setData(data);
         return dataVO;
     }
@@ -246,11 +247,11 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
 
     }
 
-    private Object getBackendData(HttpDataSetConfig config) {
+    private Object getBackendData(HttpDataSetConfig config, DatasetEntity entity) {
+        long startTime = System.currentTimeMillis();
         Map<String, String> headers = config.getHeaders() == null ? Maps.newHashMap() : config.getHeaders().stream().collect(Collectors.toMap(item -> (String) item.get("key"), item -> (String) item.get("value")));
         Map<String, Object> params = config.getParams() == null ? Maps.newHashMap() : config.getParams().stream().collect(Collectors.toMap(item -> (String) item.get("key"), item -> item.get("value")));
         String body = config.getBody();
-
         // 如果有请求前脚本，则执行请求前脚本
         Map<String, Object> reqParams = Maps.newHashMap();
         // url参数，默认为空，如果在脚本中有赋值，则后续拼接url时会使用这里的赋值（参数优先级 脚本赋值>参数预处理>外部入参>默认值）
@@ -297,6 +298,13 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
             }
             url = new StringBuilder(url.substring(0, url.length() - 1));
         }
+        if (entity == null) {
+            log.info("测试数据集（类型：【HTTP】）， 方式：【后端代理】， 类型：【{}】， URL：【{}】， header：【{}】， params：【{}】， body：【{}】",
+                    config.getMethod(), url, JSON.toJSONString(headers), JSON.toJSONString(params), body);
+        } else {
+            log.info("执行【{}】数据集（类型：【HTTP】，ID:【{}】）， 方式：【后端代理】， 类型：【{}】， URL：【{}】， header：【{}】， params：【{}】， body：【{}】",
+                    entity.getName(), entity.getId(), config.getMethod(), url, JSON.toJSONString(headers), JSON.toJSONString(params), body);
+        }
         // 发送请求
         Response response = null;
         switch (config.getMethod().toUpperCase()) {
@@ -337,21 +345,27 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
             log.error(ExceptionUtils.getStackTrace(e));
             throw new GlobalException("获取请求响应失败");
         }
+        Object returnResult = responseBody;
         // 如果有响应后脚本，则执行响应后脚本
         if (StringUtils.isNotBlank(config.getResponseScript())) {
             Map<String, Object> responseScriptMap = Maps.newHashMap();
             // 取name和value
             responseScriptMap.put("responseString", responseBody);
-            Object run = GroovyUtils.run(config.getResponseScript(), responseScriptMap);
-            return run;
+            returnResult = GroovyUtils.run(config.getResponseScript(), responseScriptMap);
         }
         if (responseBody.startsWith("{")) {
-            return JSON.parseObject(responseBody);
+            returnResult = JSON.parseObject(responseBody);
         }
         if (responseBody.startsWith("[")) {
-            return JSON.parseArray(responseBody);
+            returnResult = JSON.parseArray(responseBody);
         }
-        return responseBody;
+        long endTime = System.currentTimeMillis();
+        if (entity == null) {
+            log.info("测试数据集（类型：【HTTP】）结束， 耗时：【{}】ms", endTime - startTime);
+        } else {
+            log.info("执行【{}】数据集（类型：【HTTP】，ID:【{}】）结束, 耗时：【{}】ms", entity.getName(), entity.getId(), endTime - startTime);
+        }
+        return returnResult;
     }
 
     /**

@@ -2,6 +2,7 @@ package com.gccloud.dataset.service.impl.dataset;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.gccloud.common.exception.GlobalException;
+import com.gccloud.common.utils.JSON;
 import com.gccloud.common.vo.PageVO;
 import com.gccloud.dataset.constant.DatasetConstant;
 import com.gccloud.dataset.dao.DatasetDao;
@@ -22,6 +23,7 @@ import com.gccloud.dataset.vo.DataVO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -74,6 +76,7 @@ public class CustomDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
 
     @Override
     public PageVO execute(String id, List<DatasetParamDTO> params, int current, int size) {
+        long startTime = System.currentTimeMillis();
         if (StringUtils.isBlank(id)) {
             throw new GlobalException("数据集id不能为空");
         }
@@ -92,12 +95,15 @@ public class CustomDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
         String dataSourceId = entity.getSourceId();
         DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
+        log.info("执行【{}】数据集（类型：【自助】，ID:【{}】）， 参数：【{}】， URL：【{}】， 执行SQL：【{}】", entity.getName(), entity.getId(), JSON.toJSONString(params), datasource.getUrl(), sql);
         DataVO dataVO = buildService.executeSqlPage(datasource, sql, current, size);
         PageVO data = (PageVO) dataVO.getData();
         List list = data.getList();
         // 自定义数据处理
         list = datasetExtendClient.handleData(list, entity);
         data.setList(list);
+        long endTime = System.currentTimeMillis();
+        log.info("执行【{}】数据集（类型：【自助】，ID:【{}】）结束，耗时：【{}】毫秒", entity.getName(), entity.getId(), endTime - startTime);
         return data;
     }
 
@@ -126,11 +132,13 @@ public class CustomDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
 
     /**
      * 获取数据
+     *
      * @param finalParams
      * @param entity
      * @return
      */
     private Object getData(List<DatasetParamDTO> finalParams, DatasetEntity entity) {
+        long startTime = System.currentTimeMillis();
         CustomDataSetConfig config = (CustomDataSetConfig) entity.getConfig();
         String sql = config.getSqlProcess();
         String dataSourceId = entity.getSourceId();
@@ -140,15 +148,19 @@ public class CustomDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
         sql = DBUtils.updateParamsConfig(sql, paramList);
         DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
+        log.info("执行【{}】数据集（类型：【自助】，ID:【{}】）， 参数：【{}】， URL：【{}】， 执行SQL：【{}】", entity.getName(), entity.getId(), JSON.toJSONString(finalParams), datasource.getUrl(), sql);
         DataVO dataVO = buildService.executeSql(datasource, sql);
         List list = (List) dataVO.getData();
         // 自定义数据处理
         list = datasetExtendClient.handleData(list, entity);
+        long endTime = System.currentTimeMillis();
+        log.info("执行【{}】数据集（类型：【自助】，ID:【{}】）结束，耗时：【{}】毫秒", entity.getName(), entity.getId(), endTime - startTime);
         return list;
     }
 
     @Override
     public DataVO execute(TestExecuteDTO executeDTO) {
+        long startTime = System.currentTimeMillis();
         List<DatasetParamDTO> params = executeDTO.getParams();
         // 参数预处理
         params = paramsClient.handleParams(params);
@@ -158,6 +170,7 @@ public class CustomDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
         sql = DBUtils.updateParamsConfig(sql, params);
         DatasourceEntity datasource = datasourceService.getInfoById(executeDTO.getDataSourceId());
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
+        log.info("测试数据集（类型：【自助】）， 参数：【{}】， URL：【{}】， 执行SQL：【{}】", JSON.toJSONString(params), datasource.getUrl(), sql);
         DataVO dataVO;
         Integer current = executeDTO.getCurrent();
         Integer size = executeDTO.getSize();
@@ -166,6 +179,8 @@ public class CustomDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
         } else {
             dataVO = buildService.executeSql(datasource, sql);
         }
+        long endTime = System.currentTimeMillis();
+        log.info("测试数据集（类型：【自助】）结束，耗时：【{}】毫秒", endTime - startTime);
         return dataVO;
     }
 
