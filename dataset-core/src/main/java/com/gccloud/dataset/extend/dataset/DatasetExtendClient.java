@@ -4,6 +4,7 @@ import com.gccloud.dataset.entity.DatasetEntity;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -21,6 +22,7 @@ import java.util.Map;
 public class DatasetExtendClient {
 
     @Autowired(required = false)
+    @Lazy
     private List<IDatasetExtendService> extendServiceList;
 
 
