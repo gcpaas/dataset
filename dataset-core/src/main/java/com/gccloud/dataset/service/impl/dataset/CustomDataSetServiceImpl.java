@@ -181,6 +181,7 @@ public class CustomDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
         }
         long endTime = System.currentTimeMillis();
         log.info("测试数据集（类型：【自助】）结束，耗时：【{}】毫秒", endTime - startTime);
+        executeDTO.setScript(sql);
         return dataVO;
     }
 
