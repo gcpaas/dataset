@@ -204,7 +204,6 @@ public class OriginalDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetE
         }
         long endTime = System.currentTimeMillis();
         log.info("测试数据集（类型：【原始】）结束，耗时：【{}】ms",  endTime - startTime);
-        executeDTO.setScript(sql);
         return dataVO;
     }
 
