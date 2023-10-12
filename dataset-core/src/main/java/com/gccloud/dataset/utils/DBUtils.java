@@ -77,7 +77,8 @@ public class DBUtils {
                 // postgresql需要注册返回参数
                 proc.registerOutParameter(1, Types.OTHER);
             }
-            proc.execute();
+            // NOTE execute方法针对部分存储过程不会返回结果集，需要使用executeQuery方法
+            proc.executeQuery();
             ResultSet rs;
             if (DatasetConstant.DatasourceType.ORACLE.equalsIgnoreCase(datasource.getSourceType()) || DatasetConstant.DatasourceType.POSTGRESQL.equals(datasource.getSourceType())) {
                 // oracle和postgresql需要通过返回参数获取结果集
