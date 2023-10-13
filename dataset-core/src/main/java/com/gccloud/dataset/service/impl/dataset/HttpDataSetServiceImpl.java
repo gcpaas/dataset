@@ -109,13 +109,15 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
      */
     private Object getData(DatasetEntity entity, List<DatasetParamDTO> finalParamList) {
         HttpDataSetConfig config = (HttpDataSetConfig) entity.getConfig();
+        // NOTE 复制一份config，避免直接修改缓存
+        HttpDataSetConfig configCopy = BeanConvertUtils.convert(config, HttpDataSetConfig.class);
         List<DatasetParamDTO> params = paramsClient.handleParams(finalParamList);
-        config = this.handleParams(config, params);
-        if (config.getRequestType().equals(FRONTEND)) {
-            log.info("执行【{}】数据集（类型：【HTTP】，ID:【{}】）， 方式：【前端代理】， 类型：【{}】， URL：【{}】", entity.getName(), entity.getId(), config.getMethod(), config.getUrl());
+        configCopy = this.handleParams(configCopy, params);
+        if (configCopy.getRequestType().equals(FRONTEND)) {
+            log.info("执行【{}】数据集（类型：【HTTP】，ID:【{}】）， 方式：【前端代理】， 类型：【{}】， URL：【{}】", entity.getName(), entity.getId(), configCopy.getMethod(), configCopy.getUrl());
             // 将params替换掉config中的值
             if (params!=null && !params.isEmpty()) {
-                List<DatasetParamDTO> configParams = config.getParamsList();
+                List<DatasetParamDTO> configParams = configCopy.getParamsList();
                 for (DatasetParamDTO param : params) {
                     // 如果有name相同的，替换掉
                     for (DatasetParamDTO configParam : configParams) {
@@ -126,9 +128,9 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
                     }
                 }
             }
-            return config;
+            return configCopy;
         }
-        return this.getBackendData(config, entity);
+        return this.getBackendData(configCopy, entity);
     }
 
 
@@ -347,17 +349,19 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
         }
         Object returnResult = responseBody;
         // 如果有响应后脚本，则执行响应后脚本
-        if (StringUtils.isNotBlank(config.getResponseScript())) {
+        boolean runResponseScript = StringUtils.isNotBlank(config.getResponseScript());
+        if (runResponseScript) {
             Map<String, Object> responseScriptMap = Maps.newHashMap();
             // 取name和value
             responseScriptMap.put("responseString", responseBody);
             returnResult = GroovyUtils.run(config.getResponseScript(), responseScriptMap);
-        }
-        if (responseBody.startsWith("{")) {
-            returnResult = JSON.parseObject(responseBody);
-        }
-        if (responseBody.startsWith("[")) {
-            returnResult = JSON.parseArray(responseBody);
+        } else {
+            if (responseBody.startsWith("{")) {
+                returnResult = JSON.parseObject(responseBody);
+            }
+            if (responseBody.startsWith("[")) {
+                returnResult = JSON.parseArray(responseBody);
+            }
         }
         long endTime = System.currentTimeMillis();
         if (entity == null) {
