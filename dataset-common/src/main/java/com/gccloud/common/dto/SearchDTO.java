@@ -27,9 +27,4 @@ public class SearchDTO {
     @ApiModelProperty(notes = "查询条件")
     private String searchKey;
 
-    @ApiModelProperty(notes = "排序(支持多个字段，按照顺序进行先后排序)")
-    private Map<String,String> sortFieldMap;
-
-    @ApiModelProperty(notes = "排序(支持多个字段，按照顺序进行先后排序)")
-    private List<String> sortFieldOrderList;
 }

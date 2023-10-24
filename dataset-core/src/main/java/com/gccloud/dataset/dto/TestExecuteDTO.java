@@ -26,6 +26,9 @@ public class TestExecuteDTO extends SearchDTO {
     @ApiModelProperty(value = "执行的脚本 sql语句/存储过程/原始表名/groovy脚本")
     private String script;
 
+    @ApiModelProperty(value = "语法类型 normal:普通 mybatis:mybatis")
+    private String syntaxType;
+
     @ApiModelProperty(value = "参数")
     private List<DatasetParamDTO> params;
 

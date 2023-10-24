@@ -55,7 +55,17 @@ public class OracleDatasourceServiceImpl extends ServiceImpl<DatasourceDao, Data
         if (end > total) {
             end = total;
         }
-        String pageSql = "SELECT * FROM ( SELECT TMP.*, ROWNUM ROW_ID FROM ( " + sql + " ) TMP WHERE ROWNUM <=" + end + " ) WHERE ROW_ID > " + start;
+        List<String> columns = DBUtils.getColumns(sql, datasource.getSourceType());
+        String columnStr;
+        String tmpColumnStr;
+        if (columns == null || columns.size() == 0 || columns.contains("*")) {
+            columnStr = "*";
+            tmpColumnStr = "TMP.*";
+        } else {
+            columnStr = String.join(",", columns);
+            tmpColumnStr = "TMP." + String.join(",TMP.", columns);
+        }
+        String pageSql = "SELECT " + columnStr + " FROM ( SELECT " + tmpColumnStr + ", ROWNUM ROW_ID FROM ( " + sql + " ) TMP WHERE ROWNUM <=" + end + " ) WHERE ROW_ID > " + start;
         log.info("数据集数据详情分页 sql语句：{}", pageSql);
         DbDataVO pageData = DBUtils.getSqlValue(pageSql, datasource);
         PageVO<Map<String, Object>> page = new PageVO<>();

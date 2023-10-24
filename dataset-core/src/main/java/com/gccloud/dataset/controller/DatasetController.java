@@ -22,6 +22,7 @@ import com.gccloud.dataset.service.factory.DataSetServiceFactory;
 import com.gccloud.dataset.service.impl.dataset.BaseDatasetServiceImpl;
 import com.gccloud.dataset.service.impl.datasource.BaseDatasourceServiceImpl;
 import com.gccloud.dataset.utils.DBUtils;
+import com.gccloud.dataset.utils.MybatisParameterUtils;
 import com.gccloud.dataset.vo.DataVO;
 import com.gccloud.dataset.vo.DatasetInfoVO;
 import com.gccloud.dataset.vo.DatasetVO;
@@ -64,6 +65,9 @@ public class DatasetController {
 
     @Resource
     private ICategoryService categoryService;
+
+    @Resource
+    private MybatisParameterUtils parameterUtils;
 
 
     @ApiOperation("分页列表")
@@ -238,7 +242,15 @@ public class DatasetController {
                 String tableName = originalTest.getString("tableName");
                 executeDTO.setScript("select 1 from " + tableName);
             }
-            List<String> tableNameList = DBUtils.getTableNames(DBUtils.updateParamsConfig(executeDTO.getScript(), executeDTO.getParams()), datasource.getSourceType());
+            // 构造sql
+            String sql;
+            if (DatasetConstant.SyntaxType.MYBATIS.equals(executeDTO.getSyntaxType())) {
+                // 使用mybatis语法规则进行sql构造
+                sql = parameterUtils.updateParamsConfig(executeDTO.getScript(), executeDTO.getParams());
+            } else {
+                sql = DBUtils.updateParamsConfig(executeDTO.getScript(), executeDTO.getParams());
+            }
+            List<String> tableNameList = DBUtils.getTableNames(sql, datasource.getSourceType());
             result.put("tableNameList", tableNameList);
         }
         return R.success(result);

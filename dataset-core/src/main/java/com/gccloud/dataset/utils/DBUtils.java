@@ -3,6 +3,8 @@ package com.gccloud.dataset.utils;
 import com.alibaba.druid.DbType;
 import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLStatement;
+import com.alibaba.druid.sql.ast.statement.SQLSelectItem;
+import com.alibaba.druid.sql.ast.statement.SQLSelectQueryBlock;
 import com.alibaba.druid.sql.ast.statement.SQLSelectStatement;
 import com.alibaba.druid.sql.ast.statement.SQLUseStatement;
 import com.alibaba.druid.sql.visitor.SchemaStatVisitor;
@@ -23,10 +25,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -364,7 +363,7 @@ public class DBUtils {
 
     /**
      * 将sql语句中中进行非空标签的处理，同时参数变量替换成实际值
-     *
+     * 该方法只负责简单的${}参数替换，如果是用到了Mybatis的动态标签，请使用com.gccloud.dataset.utils.MybatisParameterUtils#updateParamsConfig
      * @param sql    sql语句
      * @param params 参数配置
      */
@@ -443,28 +442,12 @@ public class DBUtils {
      * @return
      */
     public static List<String> getTableNames (String sql, String datasourceType) {
-        DbType jdbcType;
-        switch (datasourceType.toLowerCase()) {
-            case DatasetConstant.DatasourceType.MYSQL:
-                jdbcType = JdbcConstants.MYSQL;
-                break;
-            case DatasetConstant.DatasourceType.ORACLE:
-                jdbcType = JdbcConstants.ORACLE;
-                break;
-            case DatasetConstant.DatasourceType.POSTGRESQL:
-                jdbcType = JdbcConstants.POSTGRESQL;
-                break;
-            case DatasetConstant.DatasourceType.CLICKHOUSE:
-                jdbcType = JdbcConstants.CLICKHOUSE;
-                break;
-            default:
-                return Lists.newArrayList();
+        DbType jdbcType = translateDbType(datasourceType);
+        if (jdbcType == null) {
+            return null;
         }
         List<SQLStatement> stmts = SQLUtils.parseStatements(sql, jdbcType);
         List<String> tableNames = new ArrayList<>();
-        if (stmts == null) {
-            return null;
-        }
         String database = "";
         for (SQLStatement stmt : stmts) {
             SchemaStatVisitor statVisitor = SQLUtils.createSchemaStatVisitor(JdbcConstants.MYSQL);
@@ -484,6 +467,77 @@ public class DBUtils {
             }
         }
         return tableNames;
+    }
+
+    /**
+     * 获取sql语句中的最终查询的字段名
+     * @param sql
+     * @param datasourceType
+     * @return
+     */
+    public static List<String> getColumns(String sql, String datasourceType) {
+        DbType jdbcType = translateDbType(datasourceType);
+        if (jdbcType == null) {
+            return null;
+        }
+        List<SQLStatement> statementList = SQLUtils.parseStatements(sql, jdbcType);
+        List<String> columns = new ArrayList<>();
+        for (SQLStatement statement : statementList) {
+            if (!(statement instanceof SQLSelectStatement)) {
+                continue;
+            }
+            SchemaStatVisitor visitor = new SchemaStatVisitor(jdbcType);
+            statement.accept(visitor);
+            SQLSelectStatement selectStatement = (SQLSelectStatement) statement;
+            SQLSelectQueryBlock queryBlock = selectStatement.getSelect().getFirstQueryBlock();
+            // 查询字段
+            List<SQLSelectItem> selectList = queryBlock.getSelectList();
+            if (selectList == null || selectList.isEmpty()) {
+                continue;
+            }
+            for (SQLSelectItem selectItem : selectList) {
+                String outStr = selectItem.toString().trim();
+                if (outStr.contains("AS")) {
+                    // 获取别名
+                    columns.add(selectItem.getAlias());
+                    continue;
+                }
+                // 去除字段前面的 表的别名
+                if (outStr.contains(".")) {
+                    columns.add(outStr.split("\\.", -1)[1]);
+                    continue;
+                }
+                columns.add(outStr);
+            }
+        }
+        return columns;
+    }
+
+
+    /**
+     * 将数据集插件定义的数据库类型转换为druid数据库类型
+     * @param datasourceType
+     * @return
+     */
+    public static DbType translateDbType(String datasourceType) {
+        DbType jdbcType;
+        switch (datasourceType.toLowerCase()) {
+            case DatasetConstant.DatasourceType.MYSQL:
+                jdbcType = JdbcConstants.MYSQL;
+                break;
+            case DatasetConstant.DatasourceType.ORACLE:
+                jdbcType = JdbcConstants.ORACLE;
+                break;
+            case DatasetConstant.DatasourceType.POSTGRESQL:
+                jdbcType = JdbcConstants.POSTGRESQL;
+                break;
+            case DatasetConstant.DatasourceType.CLICKHOUSE:
+                jdbcType = JdbcConstants.CLICKHOUSE;
+                break;
+            default:
+                return null;
+        }
+        return jdbcType;
     }
 
 

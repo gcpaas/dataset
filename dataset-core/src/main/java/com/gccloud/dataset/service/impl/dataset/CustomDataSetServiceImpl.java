@@ -19,11 +19,11 @@ import com.gccloud.dataset.service.IBaseDatasourceService;
 import com.gccloud.dataset.service.factory.DatasourceServiceFactory;
 import com.gccloud.dataset.service.impl.datasource.BaseDatasourceServiceImpl;
 import com.gccloud.dataset.utils.DBUtils;
+import com.gccloud.dataset.utils.MybatisParameterUtils;
 import com.gccloud.dataset.vo.DataVO;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -54,6 +54,8 @@ public class CustomDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
     @Resource
     private DatasetExtendClient datasetExtendClient;
 
+    @Resource
+    private MybatisParameterUtils parameterUtils;
 
     @Override
     public String add(DatasetEntity entity) {
@@ -91,7 +93,12 @@ public class CustomDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
         // 参数预处理
         params = paramsClient.handleParams(params);
         // 参数替换
-        sql = DBUtils.updateParamsConfig(sql, params);
+        if (DatasetConstant.SyntaxType.MYBATIS.equals(config.getSyntaxType())) {
+            // 使用mybatis语法规则进行sql构造
+            sql = parameterUtils.updateParamsConfig(sql, params);
+        } else {
+            sql = DBUtils.updateParamsConfig(sql, params);
+        }
         String dataSourceId = entity.getSourceId();
         DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
@@ -145,7 +152,12 @@ public class CustomDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
         sql = paramsClient.handleScript(entity.getDatasetType(), sql);
         List<DatasetParamDTO> paramList = paramsClient.handleParams(finalParams);
         // 参数替换
-        sql = DBUtils.updateParamsConfig(sql, paramList);
+        if (DatasetConstant.SyntaxType.MYBATIS.equals(config.getSyntaxType())) {
+            // 使用mybatis语法规则进行sql构造
+            sql = parameterUtils.updateParamsConfig(sql, paramList);
+        } else {
+            sql = DBUtils.updateParamsConfig(sql, paramList);
+        }
         DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
         log.info("执行【{}】数据集（类型：【自助】，ID:【{}】）， 参数：【{}】， URL：【{}】， 执行SQL：【{}】", entity.getName(), entity.getId(), JSON.toJSONString(finalParams), datasource.getUrl(), sql);
@@ -167,7 +179,12 @@ public class CustomDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
         String sql = executeDTO.getScript();
         sql = paramsClient.handleScript(executeDTO.getDataSetType(), sql);
         // 参数替换
-        sql = DBUtils.updateParamsConfig(sql, params);
+        if (DatasetConstant.SyntaxType.MYBATIS.equals(executeDTO.getSyntaxType())) {
+            // 使用mybatis语法规则进行sql构造
+            sql = parameterUtils.updateParamsConfig(sql, params);
+        } else {
+            sql = DBUtils.updateParamsConfig(sql, params);
+        }
         DatasourceEntity datasource = datasourceService.getInfoById(executeDTO.getDataSourceId());
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
         log.info("测试数据集（类型：【自助】）， 参数：【{}】， URL：【{}】， 执行SQL：【{}】", JSON.toJSONString(params), datasource.getUrl(), sql);

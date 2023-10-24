@@ -110,6 +110,21 @@ public interface DatasetConstant {
     }
 
     /**
+     * 语法类型
+     * 自助数据集中的语法类型
+     */
+    interface SyntaxType {
+        /**
+         * 普通
+         */
+        String NORMAL = "normal";
+        /**
+         * mybatis
+         */
+        String MYBATIS = "mybatis";
+    }
+
+    /**
      * SQL中的参数类型
      */
     interface SqlParamsType {

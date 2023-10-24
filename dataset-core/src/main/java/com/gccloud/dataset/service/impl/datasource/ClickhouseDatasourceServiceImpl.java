@@ -54,7 +54,14 @@ public class ClickhouseDatasourceServiceImpl extends ServiceImpl<DatasourceDao, 
         int total = Integer.parseInt(count.toString());
         // 组装分页sql
         int start = (current - 1) * size;
-        String pageSql = "SELECT * FROM (" + sql + ") AS t LIMIT " + start + "," + size;
+        List<String> columns = DBUtils.getColumns(sql, datasource.getSourceType());
+        String columnStr;
+        if (columns == null || columns.size() == 0 || columns.contains("*")) {
+            columnStr = "*";
+        } else {
+            columnStr = String.join(",", columns);
+        }
+        String pageSql = "SELECT " + columnStr + " FROM (" + sql + ") AS t LIMIT " + start + "," + size;
         log.info("数据集数据详情分页 sql语句：{}", pageSql);
         DbDataVO pageData = DBUtils.getSqlValue(pageSql, datasource);
         PageVO<Map<String, Object>> page = new PageVO<>();

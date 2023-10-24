@@ -22,6 +22,9 @@ public class CustomDataSetConfig extends BaseDataSetConfig {
     @ApiModelProperty(value = "字段描述")
     private Map<String, Object> fieldDesc;
 
+    @ApiModelProperty(value = "语法类型 normal:普通 mybatis:mybatis")
+    private String syntaxType;
+
     /**
      * 暂未使用
      */

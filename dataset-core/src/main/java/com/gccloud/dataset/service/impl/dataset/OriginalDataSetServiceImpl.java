@@ -20,6 +20,7 @@ import com.gccloud.dataset.service.IBaseDatasourceService;
 import com.gccloud.dataset.service.factory.DatasourceServiceFactory;
 import com.gccloud.dataset.service.impl.datasource.BaseDatasourceServiceImpl;
 import com.gccloud.dataset.vo.DataVO;
+import com.gccloud.dataset.vo.DatasetInfoVO;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -30,6 +31,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -86,16 +88,21 @@ public class OriginalDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetE
         }
         long startTime = System.currentTimeMillis();
         OriginalDataSetConfig config = (OriginalDataSetConfig) entity.getConfig();
-        String fieldInfo = config.getFieldInfo();
-        if (StringUtils.isBlank(fieldInfo)) {
-            fieldInfo = "*";
+        StringBuilder fieldInfo = new StringBuilder(config.getFieldInfo());
+        if (StringUtils.isBlank(fieldInfo.toString())) {
+            List<Map<String, Object>> fieldList = config.getFieldList();
+            for (Map<String, Object> field : fieldList) {
+                String fieldName = (String) field.get(DatasetInfoVO.FIELD_NAME);
+                fieldInfo.append(fieldName).append(",");
+            }
+            fieldInfo.deleteCharAt(fieldInfo.length() - 1);
         }
         String dataSourceId = config.getSourceId();
         DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);
         String sourceType = datasource.getSourceType();
-        fieldInfo = handleSpecialField(fieldInfo, sourceType);
+        fieldInfo = new StringBuilder(handleSpecialField(fieldInfo.toString(), sourceType));
         if (DatasetConstant.DataRepeat.NOT_REPEAT.equals(config.getRepeatStatus())) {
-            fieldInfo = "DISTINCT " + fieldInfo;
+            fieldInfo.insert(0, "DISTINCT ");
         }
         String sql = "SELECT " + fieldInfo + " FROM " + config.getTableName();
         IBaseDatasourceService buildService = datasourceServiceFactory.build(datasource.getSourceType());
@@ -142,7 +149,13 @@ public class OriginalDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetE
         OriginalDataSetConfig config = (OriginalDataSetConfig) entity.getConfig();
         String fieldInfo = config.getFieldInfo();
         if (StringUtils.isBlank(fieldInfo)) {
-            fieldInfo = "*";
+            List<Map<String, Object>> fieldList = config.getFieldList();
+            StringBuilder fieldInfoBuilder = new StringBuilder();
+            for (Map<String, Object> field : fieldList) {
+                String fieldName = (String) field.get(DatasetInfoVO.FIELD_NAME);
+                fieldInfoBuilder.append(fieldName).append(",");
+            }
+            fieldInfo = fieldInfoBuilder.deleteCharAt(fieldInfoBuilder.length() - 1).toString();
         }
         String dataSourceId = config.getSourceId();
         DatasourceEntity datasource = datasourceService.getInfoById(dataSourceId);

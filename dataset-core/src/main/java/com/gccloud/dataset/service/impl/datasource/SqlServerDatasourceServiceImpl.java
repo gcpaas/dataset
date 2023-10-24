@@ -45,8 +45,14 @@ public class SqlServerDatasourceServiceImpl extends ServiceImpl<DatasourceDao, D
         int total = Integer.parseInt(count.toString());
         // 组装分页sql
         int start = (current - 1) * size;
-
-        String pageSql = "select * from (" + sql + ") as t order by 1 offset "+ start +" rows fetch next " + 10 + " rows only";
+        List<String> columns = DBUtils.getColumns(sql, datasource.getSourceType());
+        String columnStr;
+        if (columns == null || columns.size() == 0 || columns.contains("*")) {
+            columnStr = "*";
+        } else {
+            columnStr = String.join(",", columns);
+        }
+        String pageSql = "select " + columnStr + " from (" + sql + ") as t order by 1 offset "+ start +" rows fetch next " + 10 + " rows only";
         log.info("数据集数据详情分页 sql语句：{}", pageSql);
         DbDataVO pageData = DBUtils.getSqlValue(pageSql, datasource);
         PageVO<Map<String, Object>> page = new PageVO<>();
@@ -135,7 +141,7 @@ public class SqlServerDatasourceServiceImpl extends ServiceImpl<DatasourceDao, D
             schema = split[1];
             tableName = split[2];
         }
-        String sql = "select * from information_schema.columns where table_name = '" + tableName + "'";
+        String sql = "select COLUMN_NAME,DATA_TYPE from information_schema.columns where table_name = '" + tableName + "'";
         if (StringUtils.isNotBlank(schema)) {
             sql += " and table_schema = '" + schema + "'";
         }
