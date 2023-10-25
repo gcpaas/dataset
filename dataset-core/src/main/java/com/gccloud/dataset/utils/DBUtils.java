@@ -20,10 +20,9 @@ import com.gccloud.dataset.vo.DbDataVO;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import oracle.jdbc.internal.OracleTypes;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
-
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -496,12 +495,11 @@ public class DBUtils {
                 continue;
             }
             for (SQLSelectItem selectItem : selectList) {
-                String outStr = selectItem.toString().trim();
-                if (outStr.contains("AS")) {
-                    // 获取别名
+                if (StringUtils.isNotBlank(selectItem.getAlias())) {
                     columns.add(selectItem.getAlias());
                     continue;
                 }
+                String outStr = selectItem.toString().trim();
                 // 去除字段前面的 表的别名
                 if (outStr.contains(".")) {
                     columns.add(outStr.split("\\.", -1)[1]);
