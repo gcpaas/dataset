@@ -7,6 +7,8 @@ import com.alibaba.druid.sql.ast.statement.SQLSelectItem;
 import com.alibaba.druid.sql.ast.statement.SQLSelectQueryBlock;
 import com.alibaba.druid.sql.ast.statement.SQLSelectStatement;
 import com.alibaba.druid.sql.ast.statement.SQLUseStatement;
+import com.alibaba.druid.sql.dialect.oracle.visitor.OracleSchemaStatVisitor;
+import com.alibaba.druid.sql.visitor.SQLASTVisitorAdapter;
 import com.alibaba.druid.sql.visitor.SchemaStatVisitor;
 import com.alibaba.druid.stat.TableStat;
 import com.alibaba.druid.util.JdbcConstants;
@@ -23,6 +25,7 @@ import oracle.jdbc.internal.OracleTypes;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.util.CollectionUtils;
+
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -445,25 +448,30 @@ public class DBUtils {
         if (jdbcType == null) {
             return null;
         }
-        List<SQLStatement> stmts = SQLUtils.parseStatements(sql, jdbcType);
         List<String> tableNames = new ArrayList<>();
-        String database = "";
-        for (SQLStatement stmt : stmts) {
-            SchemaStatVisitor statVisitor = SQLUtils.createSchemaStatVisitor(JdbcConstants.MYSQL);
-            if (stmt instanceof SQLUseStatement) {
-                database = ((SQLUseStatement) stmt).getDatabase().getSimpleName().toUpperCase();
+        try {
+            List<SQLStatement> stmts = SQLUtils.parseStatements(sql, jdbcType);
+            String database = "";
+            for (SQLStatement stmt : stmts) {
+                SchemaStatVisitor statVisitor = SQLUtils.createSchemaStatVisitor(jdbcType);
+                if (stmt instanceof SQLUseStatement) {
+                    database = ((SQLUseStatement) stmt).getDatabase().getSimpleName().toUpperCase();
+                }
+                stmt.accept(statVisitor);
+                Map<TableStat.Name, TableStat> tables = statVisitor.getTables();
+                if (tables != null) {
+                    final String db = database;
+                    tables.forEach((tableName, stat) -> {
+                        if (stat.getSelectCount() > 0) {
+                            String from = tableName.getName();
+                            tableNames.add(from);
+                        }
+                    });
+                }
             }
-            stmt.accept(statVisitor);
-            Map<TableStat.Name, TableStat> tables = statVisitor.getTables();
-            if (tables != null) {
-                final String db = database;
-                tables.forEach((tableName, stat) -> {
-                    if (stat.getSelectCount() > 0) {
-                        String from = tableName.getName();
-                        tableNames.add(from);
-                    }
-                });
-            }
+        } catch (Exception e) {
+            log.error("获取sql语句中的表名异常");
+            log.error(ExceptionUtils.getStackTrace(e));
         }
         return tableNames;
     }
@@ -479,34 +487,77 @@ public class DBUtils {
         if (jdbcType == null) {
             return null;
         }
-        List<SQLStatement> statementList = SQLUtils.parseStatements(sql, jdbcType);
         List<String> columns = new ArrayList<>();
-        for (SQLStatement statement : statementList) {
-            if (!(statement instanceof SQLSelectStatement)) {
-                continue;
-            }
-            SchemaStatVisitor visitor = new SchemaStatVisitor(jdbcType);
-            statement.accept(visitor);
-            SQLSelectStatement selectStatement = (SQLSelectStatement) statement;
-            SQLSelectQueryBlock queryBlock = selectStatement.getSelect().getFirstQueryBlock();
-            // 查询字段
-            List<SQLSelectItem> selectList = queryBlock.getSelectList();
-            if (selectList == null || selectList.isEmpty()) {
-                continue;
-            }
-            for (SQLSelectItem selectItem : selectList) {
-                if (StringUtils.isNotBlank(selectItem.getAlias())) {
-                    columns.add(selectItem.getAlias());
+        try {
+            List<SQLStatement> statementList = SQLUtils.parseStatements(sql, jdbcType);
+            for (SQLStatement statement : statementList) {
+                if (!(statement instanceof SQLSelectStatement)) {
                     continue;
                 }
-                String outStr = selectItem.toString().trim();
-                // 去除字段前面的 表的别名
-                if (outStr.contains(".")) {
-                    columns.add(outStr.split("\\.", -1)[1]);
+                SQLASTVisitorAdapter visitor = new SchemaStatVisitor(jdbcType);
+                if (jdbcType.equals(JdbcConstants.ORACLE)) {
+                    // oracle需要使用OracleSchemaStatVisitor
+                    visitor = new OracleSchemaStatVisitor();
+                }
+                statement.accept(visitor);
+                SQLSelectStatement selectStatement = (SQLSelectStatement) statement;
+                SQLSelectQueryBlock queryBlock = selectStatement.getSelect().getFirstQueryBlock();
+                // 查询字段
+                List<SQLSelectItem> selectList = queryBlock.getSelectList();
+                if (selectList == null || selectList.isEmpty()) {
                     continue;
                 }
-                columns.add(outStr);
+                for (SQLSelectItem selectItem : selectList) {
+                    if (StringUtils.isNotBlank(selectItem.getAlias())) {
+                        columns.add(selectItem.getAlias());
+                        continue;
+                    }
+                    String outStr = selectItem.toString().trim();
+                    if (!outStr.contains(".")) {
+                        columns.add(outStr);
+                        continue;
+                    }
+                    // 去除字段前面的 表的别名 MYSQL、CLICKHOUSE使用反引号，ORACLE、POSTGRESQL使用双引号 标识特殊字段
+                    String quote = null;
+                    if (jdbcType.equals(JdbcConstants.MYSQL) || jdbcType.equals(JdbcConstants.CLICKHOUSE)) {
+                        quote = "`";
+                    } else if (jdbcType.equals(JdbcConstants.ORACLE) || jdbcType.equals(JdbcConstants.POSTGRESQL)) {
+                        quote = "\"";
+                    }
+                    List<Integer>  indexList = new ArrayList<>();
+                    if (quote != null && outStr.contains(quote)) {
+                        Stack<Character> stack = new Stack<>();
+                        for (int i = 0; i < outStr.length(); i++) {
+                            char c = outStr.charAt(i);
+                            // 如果是`，则入栈
+                            if (c == '`') {
+                                if (!stack.isEmpty()) {
+                                    stack.pop();
+                                } else {
+                                    stack.push(c);
+                                }
+                            }
+                            // 如果是点，且栈空，则记录下标
+                            if (c == '.' && stack.isEmpty()) {
+                                indexList.add(i);
+                            }
+                        }
+                        // 如果没有符合的点，说明没有表的别名，直接返回
+                        if (indexList.isEmpty()) {
+                            columns.add(outStr);
+                            continue;
+                        }
+                    } else {
+                        indexList.add(outStr.lastIndexOf("."));
+                    }
+                    // 最后一个点后面的字符串
+                    int index = indexList.get(indexList.size() - 1);
+                    columns.add(outStr.substring(index + 1));
+                }
             }
+        } catch (Exception e) {
+            log.error("获取sql语句中的最终查询的字段名异常");
+            log.error(ExceptionUtils.getStackTrace(e));
         }
         return columns;
     }
