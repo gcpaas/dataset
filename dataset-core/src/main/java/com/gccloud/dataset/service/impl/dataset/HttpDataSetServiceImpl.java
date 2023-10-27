@@ -110,8 +110,11 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
     private Object getData(DatasetEntity entity, List<DatasetParamDTO> finalParamList) {
         HttpDataSetConfig config = (HttpDataSetConfig) entity.getConfig();
         // NOTE 复制一份config，避免直接修改缓存
-        HttpDataSetConfig configCopy = BeanConvertUtils.convert(config, HttpDataSetConfig.class);
+        // NOTE 2,  BeanConvertUtils的复制方式不可靠，源对象内部的对象引用会被复制，导致修改复制对象的值，源对象也会被修改
+        HttpDataSetConfig configCopy = JSON.parseObject(JSON.toJSONString(config), HttpDataSetConfig.class);
+        // 自定义参数拓展处理
         List<DatasetParamDTO> params = paramsClient.handleParams(finalParamList);
+        // http请求参数部分的处理
         configCopy = this.handleParams(configCopy, params);
         if (configCopy.getRequestType().equals(FRONTEND)) {
             log.info("执行【{}】数据集（类型：【HTTP】，ID:【{}】）， 方式：【前端代理】， 类型：【{}】， URL：【{}】", entity.getName(), entity.getId(), configCopy.getMethod(), configCopy.getUrl());
@@ -159,11 +162,11 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
     /**
      * 由前端执行请求，这里只需替换参数信息
      * @param config
-     * @param paramList
+     * @param datasetParamList
      * @return
      */
-    private HttpDataSetConfig handleParams(HttpDataSetConfig config, List<DatasetParamDTO> paramList) {
-        if (paramList == null || paramList.size() == 0) {
+    private HttpDataSetConfig handleParams(HttpDataSetConfig config, List<DatasetParamDTO> datasetParamList) {
+        if (datasetParamList == null || datasetParamList.size() == 0) {
             return config;
         }
         // 处理header中的参数
@@ -178,7 +181,7 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
                 if (!value.contains("${")) {
                     continue;
                 }
-                for (DatasetParamDTO param : paramList) {
+                for (DatasetParamDTO param : datasetParamList) {
                     if (value.contains(param.getName())) {
                         String replaceValue = this.parameterReplace(param, value);
                         header.put("value", replaceValue);
@@ -187,9 +190,9 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
             }
         }
         // 处理params中的参数
-        List<Map<String, Object>> params = config.getParams();
-        if (params != null && params.size() > 0) {
-            for (Map<String, Object> param : params) {
+        List<Map<String, Object>> httpParams = config.getParams();
+        if (httpParams != null && httpParams.size() > 0) {
+            for (Map<String, Object> param : httpParams) {
                 String value = (String) param.get("value");
                 if (StringUtils.isBlank(value)) {
                     continue;
@@ -198,7 +201,7 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
                 if (!value.contains("${")) {
                     continue;
                 }
-                for (DatasetParamDTO paramDTO : paramList) {
+                for (DatasetParamDTO paramDTO : datasetParamList) {
                     if (value.contains(paramDTO.getName())) {
                         String replaceValue = this.parameterReplace(paramDTO, value);
                         param.put("value", replaceValue);
@@ -208,7 +211,7 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
         }
         String body = config.getBody();
         if (StringUtils.isNotBlank(body)) {
-            for (DatasetParamDTO param : paramList) {
+            for (DatasetParamDTO param : datasetParamList) {
                 if (body.contains(param.getName())) {
                     body = this.parameterReplace(param, body);
                 }
@@ -218,7 +221,7 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
         // 处理url中的参数
         String url = config.getUrl();
         if (StringUtils.isNotBlank(url)) {
-            for (DatasetParamDTO param : paramList) {
+            for (DatasetParamDTO param : datasetParamList) {
                 if (url.contains(param.getName())) {
                     url = this.parameterReplace(param, url);
                 }
@@ -228,7 +231,7 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
         // 处理请求脚本中的参数
         String requestScript = config.getRequestScript();
         if (StringUtils.isNotBlank(requestScript)) {
-            for (DatasetParamDTO param : paramList) {
+            for (DatasetParamDTO param : datasetParamList) {
                 if (requestScript.contains(param.getName())) {
                     requestScript = this.parameterReplace(param, requestScript);
                 }
@@ -238,7 +241,7 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
         // 处理响应脚本中的参数
         String responseScript = config.getResponseScript();
         if (StringUtils.isNotBlank(responseScript)) {
-            for (DatasetParamDTO param : paramList) {
+            for (DatasetParamDTO param : datasetParamList) {
                 if (responseScript.contains(param.getName())) {
                     responseScript = this.parameterReplace(param, responseScript);
                 }
