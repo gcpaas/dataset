@@ -93,6 +93,13 @@
             <artifactId>elasticsearch-java</artifactId>
             <version>8.0.1</version>
         </dependency>
+        <!-- Oracle字符集支持 -->
+        <dependency>
+            <groupId>com.oracle.database.nls</groupId>
+            <artifactId>orai18n</artifactId>
+            <version>${oracle-database.version}</version>
+        </dependency>
+
     </dependencies>
 
 </project>
