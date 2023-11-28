@@ -182,8 +182,8 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
                     continue;
                 }
                 for (DatasetParamDTO param : datasetParamList) {
-                    if (value.contains(param.getName())) {
-                        String replaceValue = this.parameterReplace(param, value);
+                    if (value.contains("${" + param.getName() + "}")) {
+                        String replaceValue = this.parameterReplace(param, (String) header.get("value"));
                         header.put("value", replaceValue);
                     }
                 }
@@ -202,8 +202,8 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
                     continue;
                 }
                 for (DatasetParamDTO paramDTO : datasetParamList) {
-                    if (value.contains(paramDTO.getName())) {
-                        String replaceValue = this.parameterReplace(paramDTO, value);
+                    if (value.contains("${" + paramDTO.getName() + "}")) {
+                        String replaceValue = this.parameterReplace(paramDTO, (String) param.get("value"));
                         param.put("value", replaceValue);
                     }
                 }
@@ -212,7 +212,7 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
         String body = config.getBody();
         if (StringUtils.isNotBlank(body)) {
             for (DatasetParamDTO param : datasetParamList) {
-                if (body.contains(param.getName())) {
+                if (body.contains("${" + param.getName() + "}")) {
                     body = this.parameterReplace(param, body);
                 }
             }
