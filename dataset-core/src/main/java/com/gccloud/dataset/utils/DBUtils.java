@@ -402,11 +402,7 @@ public class DBUtils {
      */
     public static String parameterReplace(DatasetParamDTO param, String sql) {
         if (DatasetConstant.SqlParamsType.STRING.equals(param.getType()) || DatasetConstant.SqlParamsType.DATE.equals(param.getType())) {
-            if (param.getValue().contains(",")) {
-                sql = sql.replaceAll("\\$\\{" + param.getName() + "\\}", param.getValue());
-            } else {
-                sql = sql.replaceAll("\\$\\{" + param.getName() + "\\}", "'" + param.getValue() + "'");
-            }
+            sql = sql.replaceAll("\\$\\{" + param.getName() + "\\}", "'" + param.getValue() + "'");
         } else {
             sql = sql.replaceAll("\\$\\{" + param.getName() + "\\}", param.getValue());
         }
