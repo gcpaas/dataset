@@ -109,11 +109,16 @@ public class MysqlDatasourceServiceImpl extends ServiceImpl<DatasourceDao, Datas
         if (data == null || data.size() == 0) {
             return fieldList;
         }
+        // NOTE 不同版本的驱动中，metaData中的列名定义不一样，这里做兼容处理
+        boolean flag = data.get(0).containsKey("Field");
+        String columnName = flag ? "Field" : "COLUMN_NAME";
+        String columnType = flag ? "Type" : "COLUMN_TYPE";
+        String columnComment = flag ? "Comment" : "COLUMN_COMMENT";
         for (Map<String, Object> map : data) {
             FieldInfoVO fieldInfoVO = new FieldInfoVO();
-            fieldInfoVO.setColumnName(String.valueOf(map.get("Field")));
-            fieldInfoVO.setColumnType(String.valueOf(map.get("Type")));
-            fieldInfoVO.setColumnComment(String.valueOf(map.get("Comment")));
+            fieldInfoVO.setColumnName(String.valueOf(map.get(columnName)));
+            fieldInfoVO.setColumnType(String.valueOf(map.get(columnType)));
+            fieldInfoVO.setColumnComment(String.valueOf(map.get(columnComment)));
             fieldList.add(fieldInfoVO);
         }
         return fieldList;
