@@ -254,8 +254,29 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
 
     private Object getBackendData(HttpDataSetConfig config, DatasetEntity entity) {
         long startTime = System.currentTimeMillis();
+        // 请求头
         Map<String, String> headers = config.getHeaders() == null ? Maps.newHashMap() : config.getHeaders().stream().collect(Collectors.toMap(item -> (String) item.get("key"), item -> (String) item.get("value")));
-        Map<String, Object> params = config.getParams() == null ? Maps.newHashMap() : config.getParams().stream().collect(Collectors.toMap(item -> (String) item.get("key"), item -> item.get("value")));
+        // 请求参数
+        Map<String, Object> params = Maps.newHashMap();
+        if (config.getParams() != null) {
+            for (Map<String, Object> param : config.getParams()) {
+                String key = (String) param.get("key");
+                // 如果有多个同名参数，使用List存储所有参数值
+                if (!params.containsKey(key)) {
+                    params.put(key, param.get("value"));
+                    continue;
+                }
+                Object valueObj = params.get(key);
+                if (valueObj instanceof List) {
+                    ((List) valueObj).add(param.get("value"));
+                } else {
+                    List<Object> valueList = Lists.newArrayList();
+                    valueList.add(valueObj);
+                    valueList.add(param.get("value"));
+                    params.put(key, valueList);
+                }
+            }
+        }
         String body = config.getBody();
         // 如果有请求前脚本，则执行请求前脚本
         Map<String, Object> reqParams = Maps.newHashMap();
@@ -270,21 +291,44 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
             GroovyUtils.run(config.getRequestScript(), requestScriptMap);
         }
         // 替换url中的参数
-        Map<String, String> paramsInUrl = getUrlParams(config.getUrl());
+        Map<String, Object> paramsInUrl = getUrlParams(config.getUrl());
         if (!paramsInUrl.isEmpty()) {
             // 去除url中的参数，后面整体重新拼接
             config.setUrl(config.getUrl().replaceAll("\\?.*", ""));
             Map<String, Object> urlParams = (Map<String, Object>) reqParams.get("url");
             urlParams = urlParams == null ? Maps.newHashMap() : urlParams;
-            for (Map.Entry<String, String> entry : paramsInUrl.entrySet()) {
+            // 遍历url参数，如果url参数在脚本中有赋值，则使用脚本中的赋值
+            for (Map.Entry<String, Object> entry : paramsInUrl.entrySet()) {
                 String key = entry.getKey();
-                String value = entry.getValue();
+                Object value = entry.getValue();
                 if (!urlParams.containsKey(key)) {
                     // 将原本的url参数放入params中，一会儿重新拼接
-                    params.put(key, value);
+                    if (params.containsKey(key)) {
+                        Object valueObj = params.get(key);
+                        // 检查value 和 valueObj的类型，如果都是List，则合并；如果都不是List，则转换成List合并；如果一个是List，一个不是，则将不是的添加到List中
+                        if (valueObj instanceof List) {
+                            if (value instanceof List) {
+                                ((List) valueObj).addAll((List) value);
+                            } else {
+                                ((List) valueObj).add(value);
+                            }
+                            params.put(key, valueObj);
+                        } else {
+                            List<Object> valueList = Lists.newArrayList();
+                            valueList.add(valueObj);
+                            if (value instanceof List) {
+                                valueList.addAll((List) value);
+                            } else {
+                                valueList.add(value);
+                            }
+                            params.put(key, valueList);
+                        }
+                    } else {
+                        params.put(key, value);
+                    }
                     continue;
                 }
-                // 如果url中的参数在脚本中有赋值，则使用脚本中的赋值
+                // 如果url中的参数在脚本中有赋值，则直接使用脚本中的赋值
                 params.put(key, urlParams.get(key));
             }
         }
@@ -298,6 +342,13 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
             }
             for (Map.Entry<String, Object> entry : params.entrySet()) {
                 String key = entry.getKey();
+                if (entry.getValue() instanceof List) {
+                    List<Object> valueList = (List<Object>) entry.getValue();
+                    for (Object value : valueList) {
+                        url.append(key).append("=").append(value).append("&");
+                    }
+                    continue;
+                }
                 String value = String.valueOf(entry.getValue());
                 url.append(key).append("=").append(value).append("&");
             }
@@ -324,7 +375,7 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
                 // 从Header中取Content-Type
                 Object contentTypeObj = upperCaseHeaders.get("Content-Type".toUpperCase());
                 String contentType = contentTypeObj == null ? "" : contentTypeObj.toString();
-                if (contentTypeObj == null && (reqParams.get("data") == null || reqParams.get("data").toString().length() > 0)) {
+                if (contentTypeObj == null && (reqParams.get("data") == null || reqParams.get("data").toString().length() == 0)) {
                     // HttpUtils.post传入的contentType为空时，则默认为application/json，这时如果data为空，需要将data置为空json{}
                     body = "{}";
                 } else {
@@ -391,19 +442,37 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
      * @param urlString
      * @return
      */
-    private Map<String, String> getUrlParams(String urlString) {
-        Map<String, String> map = Maps.newHashMap();
+    private Map<String, Object> getUrlParams(String urlString) {
+        Map<String, Object> map = Maps.newHashMap();
         try {
             URL url = new URL(urlString);
             String query = url.getQuery();
             String[] params = query.split("&");
             for (String param : params) {
                 String[] keyValue = param.split("=");
+                if (keyValue.length != 2) {
+                    continue;
+                }
                 String key = URLDecoder.decode(keyValue[0], "UTF-8");
                 String value = URLDecoder.decode(keyValue[1], "UTF-8");
-                map.put(key, value);
+                if (!map.containsKey(key)) {
+                    map.put(key, value);
+                    continue;
+                }
+                Object valueObj = map.get(key);
+                if (valueObj instanceof List) {
+                    List<String> values = (List<String>) valueObj;
+                    values.add(value);
+                } else {
+                    List<String> values = Lists.newArrayList();
+                    values.add(valueObj.toString());
+                    values.add(value);
+                    map.put(key, values);
+                }
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.error("解析url参数失败");
+            log.error(ExceptionUtils.getStackTrace(e));
         }
         return map;
     }

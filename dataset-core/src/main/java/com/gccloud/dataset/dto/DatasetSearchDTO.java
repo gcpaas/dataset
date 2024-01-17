@@ -38,6 +38,8 @@ public class DatasetSearchDTO extends SearchDTO {
     @ApiModelProperty(value = "数据集id列表")
     private List<String> datasetIds;
 
+    @ApiModelProperty(value = "定位id，用于获取该数据集id位于的分页位置")
+    private String positionId;
 
 
 }
