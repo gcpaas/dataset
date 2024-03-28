@@ -24,6 +24,9 @@ public class DatasetParamDTO {
     @ApiModelProperty(value = "参数值")
     private String value;
 
+    @ApiModelProperty(value = "测试参数值")
+    private String testValue;
+
     @ApiModelProperty(value = "参数状态")
     private Integer status;
 

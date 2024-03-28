@@ -32,9 +32,6 @@ public class DatasetEntity extends SuperEntity {
     @ApiModelProperty(value = "数据集类型")
     private String datasetType;
 
-    @ApiModelProperty(value = "模块编码")
-    private String moduleCode;
-
     @ApiModelProperty(value = "是否可编辑，0 不可编辑 1 可编辑")
     private Integer editable;
 

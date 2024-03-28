@@ -447,9 +447,6 @@ public class HttpDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
         try {
             URL url = new URL(urlString);
             String query = url.getQuery();
-            if (StringUtils.isBlank(query)) {
-                return map;
-            }
             String[] params = query.split("&");
             for (String param : params) {
                 String[] keyValue = param.split("=");

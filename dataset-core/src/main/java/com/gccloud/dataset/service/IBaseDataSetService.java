@@ -75,7 +75,6 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
         queryWrapper.like(StringUtils.isNotBlank(searchDTO.getName()), DatasetEntity::getName, searchDTO.getName());
         queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getTypeId()), DatasetEntity::getTypeId, searchDTO.getTypeId());
         queryWrapper.in(CollectionUtils.isNotEmpty(searchDTO.getDatasetType()), DatasetEntity::getDatasetType, searchDTO.getDatasetType());
-        queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getModuleCode()), DatasetEntity::getModuleCode, searchDTO.getModuleCode());
         queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getSourceId()), DatasetEntity::getSourceId, searchDTO.getSourceId());
         if (searchDTO.getDatasetIds() != null && searchDTO.getDatasetIds().size() > 0) {
             queryWrapper.in(DatasetEntity::getId, searchDTO.getDatasetIds());
@@ -140,14 +139,12 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
      * 名称重复校验
      * @param id
      * @param name
-     * @param moduleCode
      * @return
      */
-    default boolean checkNameRepeat(String id, String name, String moduleCode) {
+    default boolean checkNameRepeat(String id, String name) {
         LambdaQueryWrapper<DatasetEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.select(DatasetEntity::getId);
         queryWrapper.eq(DatasetEntity::getName, name);
-        queryWrapper.eq(StringUtils.isNotBlank(moduleCode), DatasetEntity::getModuleCode, moduleCode);
         queryWrapper.ne(StringUtils.isNotBlank(id), DatasetEntity::getId, id);
         return this.list(queryWrapper).size() > 0;
     }
@@ -205,10 +202,9 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
      * @param code
      * @return
      */
-    default DatasetEntity getByCode(String code, String moduleCode) {
+    default DatasetEntity getByCode(String code) {
         LambdaQueryWrapper<DatasetEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(DatasetEntity::getCode, code);
-        queryWrapper.eq(StringUtils.isNotBlank(moduleCode), DatasetEntity::getModuleCode, moduleCode);
         List<DatasetEntity> list = this.list(queryWrapper);
         if (list.isEmpty()) {
             throw new GlobalException("数据集不存在");

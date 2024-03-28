@@ -18,7 +18,4 @@ public class DatasourceSearchDTO extends SearchDTO {
     @ApiModelProperty(value = "数据源类型")
     private String sourceType;
 
-    @ApiModelProperty(value = "模块编码")
-    private String moduleCode;
-
 }

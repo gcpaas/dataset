@@ -33,9 +33,6 @@ public class CategoryVO implements TreeVo<CategoryVO> {
     @ApiModelProperty(value = "表名称")
     private String type;
 
-    @ApiModelProperty(value = "模块编码")
-    private String moduleCode;
-
     @ApiModelProperty(notes = "创建时间")
     private Date createDate;
 

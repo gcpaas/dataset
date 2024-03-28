@@ -35,9 +35,6 @@ public class DatasetInfoVO {
     @ApiModelProperty(value = "数据源id")
     private String sourceId;
 
-    @ApiModelProperty(value = "模块编码")
-    private String moduleCode;
-
     @ApiModelProperty(value = "是否可编辑，0 不可编辑 1 可编辑")
     private Integer editable;
 

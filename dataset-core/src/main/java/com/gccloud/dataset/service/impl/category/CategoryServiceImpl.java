@@ -43,7 +43,6 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
     @Override
     public List<CategoryVO> getTree(CategorySearchDTO searchDTO) {
         LambdaQueryWrapper<CategoryEntity> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(StringUtils.isNotBlank(searchDTO.getModuleCode()), CategoryEntity::getModuleCode, searchDTO.getModuleCode());
         wrapper.eq(StringUtils.isNotBlank(searchDTO.getType()), CategoryEntity::getType, searchDTO.getType());
         List<CategoryEntity> list = this.list(wrapper);
         List<CategoryVO> voList = BeanConvertUtils.convert(list, CategoryVO.class);
@@ -111,7 +110,6 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         LambdaQueryWrapper<CategoryEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.select(CategoryEntity::getId);
         queryWrapper.eq(CategoryEntity::getName, entity.getName());
-        queryWrapper.eq(StringUtils.isNotBlank(entity.getModuleCode()), CategoryEntity::getModuleCode, entity.getModuleCode());
         queryWrapper.eq(StringUtils.isNotBlank(entity.getType()), CategoryEntity::getType, entity.getType());
         queryWrapper.ne(StringUtils.isNotBlank(entity.getId()), CategoryEntity::getId, entity.getId());
         if (StringUtils.isBlank(entity.getParentId())) {

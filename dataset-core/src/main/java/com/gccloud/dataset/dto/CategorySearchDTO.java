@@ -15,7 +15,4 @@ public class CategorySearchDTO extends SearchDTO {
     @ApiModelProperty(value = "分类树类别")
     private String type;
 
-    @ApiModelProperty(value = "模块编码")
-    private String moduleCode;
-
 }

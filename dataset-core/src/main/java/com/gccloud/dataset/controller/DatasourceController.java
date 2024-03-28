@@ -37,7 +37,6 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.Resource;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -130,7 +129,7 @@ public class DatasourceController {
     @PostMapping("/checkRepeat")
     @ApiPermission(permissions = {DatasetConstant.Permission.Datasource.VIEW})
     public R<Boolean> checkRepeat(@RequestBody DatasourceEntity datasource) {
-        Boolean flag = baseDatasourceService.checkNameRepeat(datasource.getId(), datasource.getSourceName(), datasource.getModuleCode());
+        Boolean flag = baseDatasourceService.checkNameRepeat(datasource.getId(), datasource.getSourceName());
         return R.success(flag);
     }
 
@@ -144,9 +143,6 @@ public class DatasourceController {
         }
         IBaseDatasourceService datasourceService = datasourceServiceFactory.build(datasourceEntity.getSourceType());
         List<TableInfoVO> tableList = datasourceService.getTableList(datasourceEntity);
-        if (tableList == null) {
-            return R.success(new ArrayList<>());
-        }
         DatasetSearchDTO searchDTO = new DatasetSearchDTO();
         searchDTO.setDatasetType(Lists.newArrayList(DatasetConstant.DataSetType.ORIGINAL));
         searchDTO.setSourceId(sourceId);

@@ -35,7 +35,6 @@ public interface IBaseDatasourceService extends ISuperService<DatasourceEntity> 
         LambdaQueryWrapper<DatasourceEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.like(StringUtils.isNotBlank(searchDTO.getSourceName()), DatasourceEntity::getSourceName, searchDTO.getSourceName());
         queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getSourceType()), DatasourceEntity::getSourceType, searchDTO.getSourceType());
-        queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getModuleCode()), DatasourceEntity::getModuleCode, searchDTO.getModuleCode());
         queryWrapper.orderByDesc(DatasourceEntity::getCreateDate);
         PageVO<DatasourceEntity> page = this.page(searchDTO, queryWrapper);
         page.getList().forEach(datasourceConfig -> datasourceConfig.setPassword(null));
@@ -51,7 +50,6 @@ public interface IBaseDatasourceService extends ISuperService<DatasourceEntity> 
         LambdaQueryWrapper<DatasourceEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.like(StringUtils.isNotBlank(searchDTO.getSourceName()), DatasourceEntity::getSourceName, searchDTO.getSourceName());
         queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getSourceType()), DatasourceEntity::getSourceType, searchDTO.getSourceType());
-        queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getModuleCode()), DatasourceEntity::getModuleCode, searchDTO.getModuleCode());
         queryWrapper.orderByDesc(DatasourceEntity::getCreateDate);
         List<DatasourceEntity> list = this.list(queryWrapper);
         list.forEach(datasourceConfig -> datasourceConfig.setPassword(null));
@@ -131,14 +129,12 @@ public interface IBaseDatasourceService extends ISuperService<DatasourceEntity> 
      * 数据源名称重复校验
      * @param id
      * @param name
-     * @param moduleCode
      * @return
      */
-    default boolean checkNameRepeat(String id, String name, String moduleCode) {
+    default boolean checkNameRepeat(String id, String name) {
         LambdaQueryWrapper<DatasourceEntity> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.select(DatasourceEntity::getId);
         queryWrapper.eq(DatasourceEntity::getSourceName, name);
-        queryWrapper.eq(StringUtils.isNotBlank(moduleCode), DatasourceEntity::getModuleCode, moduleCode);
         queryWrapper.ne(StringUtils.isNotBlank(id), DatasourceEntity::getId, id);
         return this.list(queryWrapper).size() > 0;
     }

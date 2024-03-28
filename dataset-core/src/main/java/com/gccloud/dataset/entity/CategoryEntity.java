@@ -29,6 +29,4 @@ public class CategoryEntity extends SuperEntity {
     @ApiModelProperty(value = "分类树类型")
     private String type;
 
-    @ApiModelProperty(value = "模块编码")
-    private String moduleCode;
 }

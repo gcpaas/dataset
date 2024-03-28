@@ -178,7 +178,6 @@ public class BaseDatasetServiceImpl extends ServiceImpl<DatasetDao, DatasetEntit
         if (searchDTO.getDatasetIds() != null && searchDTO.getDatasetIds().size() > 0) {
             queryWrapper.in(DatasetEntity::getId, searchDTO.getDatasetIds());
         }
-        queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getModuleCode()), DatasetEntity::getModuleCode, searchDTO.getModuleCode());
         queryWrapper.eq(StringUtils.isNotBlank(searchDTO.getSourceId()), DatasetEntity::getSourceId, searchDTO.getSourceId());
         queryWrapper.orderByDesc(DatasetEntity::getUpdateDate);
         return queryWrapper;

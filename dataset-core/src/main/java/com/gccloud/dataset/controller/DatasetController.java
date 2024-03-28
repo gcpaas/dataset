@@ -7,10 +7,7 @@ import com.gccloud.common.utils.JSON;
 import com.gccloud.common.vo.PageVO;
 import com.gccloud.common.vo.R;
 import com.gccloud.dataset.constant.DatasetConstant;
-import com.gccloud.dataset.dto.DatasetDTO;
-import com.gccloud.dataset.dto.DatasetSearchDTO;
-import com.gccloud.dataset.dto.ExecuteDTO;
-import com.gccloud.dataset.dto.TestExecuteDTO;
+import com.gccloud.dataset.dto.*;
 import com.gccloud.dataset.entity.CategoryEntity;
 import com.gccloud.dataset.entity.DatasetEntity;
 import com.gccloud.dataset.entity.DatasourceEntity;
@@ -217,7 +214,7 @@ public class DatasetController {
     @PostMapping("/checkRepeat")
     @ApiPermission(permissions = {DatasetConstant.Permission.Dataset.VIEW})
     public R<Boolean> checkRepeat(@RequestBody DatasetEntity datasetEntity) {
-        boolean nameRepeat = baseDatasetService.checkNameRepeat(datasetEntity.getId(), datasetEntity.getName(), datasetEntity.getModuleCode());
+        boolean nameRepeat = baseDatasetService.checkNameRepeat(datasetEntity.getId(), datasetEntity.getName());
         return R.success(nameRepeat);
     }
 
@@ -227,6 +224,15 @@ public class DatasetController {
     public R<Object> execute(@RequestBody TestExecuteDTO executeDTO) {
         if (StringUtils.isBlank(executeDTO.getDataSetType())) {
             return R.error("数据集类型不能为空");
+        }
+        List<DatasetParamDTO> params = executeDTO.getParams();
+        if (params != null && !params.isEmpty()) {
+            for (DatasetParamDTO param : params) {
+                // 检查testValue，如果不是空，则覆盖value
+                if (StringUtils.isNotBlank(param.getTestValue())) {
+                    param.setValue(param.getTestValue());
+                }
+            }
         }
         // 获取对应的数据集服务
         IBaseDataSetService dataSetService = dataSetServiceFactory.build(executeDTO.getDataSetType());
