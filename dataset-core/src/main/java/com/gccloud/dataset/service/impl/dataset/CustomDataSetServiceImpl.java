@@ -21,14 +21,21 @@ import com.gccloud.dataset.service.impl.datasource.BaseDatasourceServiceImpl;
 import com.gccloud.dataset.utils.DBUtils;
 import com.gccloud.dataset.utils.MybatisParameterUtils;
 import com.gccloud.dataset.vo.DataVO;
+import com.gccloud.dataset.vo.DatasetInfoVO;
+import com.gccloud.dataset.vo.FieldInfoVO;
+import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 /**
  * @author hongyang
@@ -199,6 +206,39 @@ public class CustomDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
         long endTime = System.currentTimeMillis();
         log.info("测试数据集（类型：【自助】）结束，耗时：【{}】毫秒", endTime - startTime);
         executeDTO.setScript(sql);
+        List<String> tableNames = DBUtils.getTableNames(sql, datasource.getSourceType());
+        Map<String, String> columnAlias = DBUtils.getColumnAlias(sql, datasource.getSourceType());
+        List<FieldInfoVO> tableColumnList = Lists.newArrayList();
+        for (String tableName : tableNames) {
+            List<FieldInfoVO> list = null;
+            try {
+                list = buildService.getTableColumnList(datasource, tableName);
+            } catch (Exception e) {
+                log.error("获取表【{}】字段信息异常", tableName);
+                log.error(ExceptionUtils.getStackTrace(e));
+            }
+            if (CollectionUtils.isNotEmpty(list)) {
+                tableColumnList.addAll(list);
+            }
+        }
+        // 原始字段名和字段描述的映射，这里如果有字段名重复，也不做特殊处理，直接覆盖
+        Map<String, String> columnDesc = new HashMap<>();
+        for (FieldInfoVO fieldInfoVO : tableColumnList) {
+            if (columnDesc.containsKey(fieldInfoVO.getColumnName()) && StringUtils.isNotBlank(columnDesc.get(fieldInfoVO.getColumnName()))) {
+                continue;
+            }
+            columnDesc.put(fieldInfoVO.getColumnName(), fieldInfoVO.getColumnComment());
+        }
+        List<Map<String, Object>> structure = dataVO.getStructure();
+        for (Map<String, Object> fieldInfo : structure) {
+            String fieldName = fieldInfo.get(DatasetInfoVO.FIELD_NAME).toString();
+            if (columnAlias.containsKey(fieldName)) {
+                fieldName = columnAlias.get(fieldName);
+            }
+            if (columnDesc.containsKey(fieldName)) {
+                fieldInfo.put(DatasetInfoVO.FIELD_DESC, columnDesc.get(fieldName));
+            }
+        }
         return dataVO;
     }
 

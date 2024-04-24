@@ -558,6 +558,103 @@ public class DBUtils {
         return columns;
     }
 
+    /**
+     * 解析SQL中的字段别名
+     * @param sql
+     * @param datasourceType
+     * @return 字段别名与字段名的映射
+     */
+    public static Map<String, String> getColumnAlias(String sql, String datasourceType) {
+        DbType jdbcType = translateDbType(datasourceType);
+        Map<String, String> columnAlias = new HashMap<>();
+        if (jdbcType == null) {
+            return columnAlias;
+        }
+        try {
+            List<SQLStatement> statementList = SQLUtils.parseStatements(sql, jdbcType);
+            for (SQLStatement statement : statementList) {
+                if (!(statement instanceof SQLSelectStatement)) {
+                    continue;
+                }
+                SQLASTVisitorAdapter visitor = new SchemaStatVisitor(jdbcType);
+                if (jdbcType.equals(JdbcConstants.ORACLE)) {
+                    // oracle需要使用OracleSchemaStatVisitor
+                    visitor = new OracleSchemaStatVisitor();
+                }
+                statement.accept(visitor);
+                SQLSelectStatement selectStatement = (SQLSelectStatement) statement;
+                SQLSelectQueryBlock queryBlock = selectStatement.getSelect().getFirstQueryBlock();
+                // 查询字段
+                List<SQLSelectItem> selectList = queryBlock.getSelectList();
+                if (selectList == null || selectList.isEmpty()) {
+                    continue;
+                }
+                for (SQLSelectItem selectItem : selectList) {
+                    String alias = selectItem.getAlias();
+                    String outStr = selectItem.getExpr().toString().trim();
+                    if (!outStr.contains(".")) {
+                        if (StringUtils.isNotBlank(alias)) {
+                            columnAlias.put(alias, outStr);
+                            continue;
+                        }
+                        columnAlias.put(outStr, outStr);
+                        continue;
+                    }
+                    String column = "";
+                    // 去除字段前面的 表的别名 MYSQL、CLICKHOUSE使用反引号，ORACLE、POSTGRESQL使用双引号 标识特殊字段
+                    String quote = null;
+                    if (jdbcType.equals(JdbcConstants.MYSQL) || jdbcType.equals(JdbcConstants.CLICKHOUSE)) {
+                        quote = "`";
+                    } else if (jdbcType.equals(JdbcConstants.ORACLE) || jdbcType.equals(JdbcConstants.POSTGRESQL)) {
+                        quote = "\"";
+                    }
+                    List<Integer>  indexList = new ArrayList<>();
+                    if (quote != null && outStr.contains(quote)) {
+                        Stack<Character> stack = new Stack<>();
+                        for (int i = 0; i < outStr.length(); i++) {
+                            char c = outStr.charAt(i);
+                            // 如果是`，则入栈
+                            if (c == '`') {
+                                if (!stack.isEmpty()) {
+                                    stack.pop();
+                                } else {
+                                    stack.push(c);
+                                }
+                            }
+                            // 如果是点，且栈空，则记录下标
+                            if (c == '.' && stack.isEmpty()) {
+                                indexList.add(i);
+                            }
+                        }
+                        // 如果没有符合的点，说明没有表的别名，直接返回
+                        if (indexList.isEmpty()) {
+                            if (StringUtils.isNotBlank(alias)) {
+                                columnAlias.put(alias, outStr);
+                                continue;
+                            }
+                            columnAlias.put(outStr, outStr);
+                            continue;
+                        }
+                    } else {
+                        indexList.add(outStr.lastIndexOf("."));
+                    }
+                    // 最后一个点后面的字符串
+                    int index = indexList.get(indexList.size() - 1);
+                    column = outStr.substring(index + 1);
+                    if (StringUtils.isNotBlank(alias)) {
+                        columnAlias.put(alias, column);
+                        continue;
+                    }
+                    columnAlias.put(column, column);
+                }
+            }
+        } catch (Exception e) {
+            log.error("解析sql语句中的字段别名出现异常");
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+        return columnAlias;
+    }
+
 
     /**
      * 将数据集插件定义的数据库类型转换为druid数据库类型
