@@ -235,7 +235,7 @@ public class CustomDataSetServiceImpl extends ServiceImpl<DatasetDao, DatasetEnt
             if (columnAlias.containsKey(fieldName)) {
                 fieldName = columnAlias.get(fieldName);
             }
-            if (columnDesc.containsKey(fieldName)) {
+            if (columnDesc.containsKey(fieldName) && columnDesc.get(fieldName) != null) {
                 fieldInfo.put(DatasetInfoVO.FIELD_DESC, columnDesc.get(fieldName));
             }
         }
