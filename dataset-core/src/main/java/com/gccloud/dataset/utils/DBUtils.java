@@ -639,4 +639,92 @@ public class DBUtils {
         return true;
     }
 
+
+    public static void unityDataType(List<Map<String, Object>> structure, List<String> numberTypes, List<String> dateTypes) {
+        unityDataType(null, structure, numberTypes, dateTypes, null, null);
+    }
+
+    public static void unityDataType(List<Map<String, Object>> data, List<Map<String, Object>> structure, List<String> numberTypes, List<String> dateTypes) {
+        unityDataType(data, structure, numberTypes, dateTypes, null, null);
+    }
+
+
+    /**
+     * 处理响应数据的数据类型
+     * 主要是将数据类型转换为统一的数据类型
+     * 统一数据格式参考 {@link DatasetConstant.DataType}
+     * @param data 数据，当无法从结构中获取数据类型时，根据数据值进行判断
+     * @param structure 原始数据结构
+     * @param numberTypes 数值类型的数据类型
+     * @param dateTypes 日期类型的数据类型
+     * @param stringTypes 字符串类型的数据类型
+     * @param boolTypes 布尔类型的数据类型
+     */
+    public static void unityDataType(List<Map<String, Object>> data, List<Map<String, Object>> structure, List<String> numberTypes, List<String> dateTypes, List<String> stringTypes, List<String> boolTypes) {
+        if (numberTypes == null) {
+            numberTypes = new ArrayList<>();
+        }
+        if (dateTypes == null) {
+            dateTypes = new ArrayList<>();
+        }
+        if (stringTypes == null) {
+            stringTypes = new ArrayList<>();
+        }
+        if (boolTypes == null) {
+            boolTypes = new ArrayList<>();
+        }
+        try {
+            boolean hasNullType = false;
+            Map<String, Map<String, Object>> nullTypeFields = new HashMap<>();
+            for (Map<String, Object> field : structure) {
+                Object fieldType = field.get(DatasetInfoVO.FIELD_TYPE);
+                if (fieldType == null) {
+                    hasNullType = true;
+                    nullTypeFields.put(field.get(DatasetInfoVO.FIELD_NAME).toString(), field);
+                    continue;
+                }
+                String type = fieldType.toString().toUpperCase();
+                if (numberTypes.contains(type)) {
+                    field.put(DatasetInfoVO.FIELD_TYPE, DatasetConstant.DataType.NUMBER);
+                } else if (dateTypes.contains(type)) {
+                    field.put(DatasetInfoVO.FIELD_TYPE, DatasetConstant.DataType.DATE);
+                } else if (stringTypes.contains(type)) {
+                    field.put(DatasetInfoVO.FIELD_TYPE, DatasetConstant.DataType.TEXT);
+                } else if (boolTypes.contains(type)) {
+                    field.put(DatasetInfoVO.FIELD_TYPE, DatasetConstant.DataType.BOOLEAN);
+                } else {
+                    field.put(DatasetInfoVO.FIELD_TYPE, DatasetConstant.DataType.TEXT);
+                }
+            }
+            if (!hasNullType) {
+                return;
+            }
+            // 如果有字段的数据类型为空，则根据数据值进行判断
+            if (data == null || data.isEmpty()) {
+                return;
+            }
+            Map<String, Object> dataSample = data.get(0);
+            for (Map.Entry<String, Object> entry : dataSample.entrySet()) {
+                String key = entry.getKey();
+                Object value = entry.getValue();
+                if (value == null) {
+                    continue;
+                }
+                Map<String, Object> field = nullTypeFields.get(key);
+                if (field == null) {
+                    continue;
+                }
+                if (value instanceof Number) {
+                    field.put(DatasetInfoVO.FIELD_TYPE, DatasetConstant.DataType.NUMBER);
+                } else {
+                    field.put(DatasetInfoVO.FIELD_TYPE, DatasetConstant.DataType.TEXT);
+                }
+            }
+        } catch (Exception e) {
+            log.error("处理数据类型异常：{}", e.getMessage());
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+
+    }
+
 }

@@ -42,9 +42,20 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service(DatasetConstant.DatasourceType.SQLSERVER)
 public class SqlServerDatasourceServiceImpl extends ServiceImpl<DatasourceDao, DatasourceEntity> implements IBaseDatasourceService {
+
+    /**
+     * sqlserver 数据类型映射
+     */
+    private static final List<String> SQLSERVER_TYPE_NUMBER = Lists.newArrayList("BIGINT", "NUMERIC", "BIT",
+            "SMALLINT", "DECIMAL", "SMALLMONEY", "INT", "TINYINT", "MONEY", "FLOAT", "REAL");
+    private static final List<String> SQLSERVER_TYPE_DATE = Lists.newArrayList("DATE", "DATETIMEOFFSET", "DATETIME2",
+            "SMALLDATETIME", "DATETIME", "TIME");
+
+
     @Override
     public DataVO executeSql(DatasourceEntity datasource, String sql) {
         DbDataVO dbDataVO = DBUtils.getSqlValue(sql, datasource);
+        DBUtils.unityDataType(dbDataVO.getData(), dbDataVO.getStructure(), SQLSERVER_TYPE_NUMBER, SQLSERVER_TYPE_DATE);
         return new DataVO(dbDataVO.getData(), dbDataVO.getStructure());
     }
 
@@ -77,6 +88,7 @@ public class SqlServerDatasourceServiceImpl extends ServiceImpl<DatasourceDao, D
         page.setTotalCount(total);
         page.setTotalPage((total + size - 1) / size);
         page.setList(pageData.getData());
+        DBUtils.unityDataType(pageData.getData(), pageData.getStructure(), SQLSERVER_TYPE_NUMBER, SQLSERVER_TYPE_DATE);
         return new DataVO(page, pageData.getStructure());
     }
 
@@ -195,6 +207,7 @@ public class SqlServerDatasourceServiceImpl extends ServiceImpl<DatasourceDao, D
     @Override
     public DataVO executeProcedure(DatasourceEntity datasource, String procedure, Integer current, Integer size) {
         DbDataVO dbDataVO = DBUtils.call(procedure, datasource, current, size);
+        DBUtils.unityDataType(dbDataVO.getData(), dbDataVO.getStructure(), SQLSERVER_TYPE_NUMBER, SQLSERVER_TYPE_DATE);
         boolean pageFlag = current != null && size != null;
         if (pageFlag) {
             return new DataVO(dbDataVO.getPageData(), dbDataVO.getStructure());

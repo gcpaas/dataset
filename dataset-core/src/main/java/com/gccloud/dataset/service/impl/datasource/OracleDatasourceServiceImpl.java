@@ -48,9 +48,20 @@ import java.util.Map;
 @Service(DatasetConstant.DatasourceType.ORACLE)
 public class OracleDatasourceServiceImpl extends ServiceImpl<DatasourceDao, DatasourceEntity> implements IBaseDatasourceService {
 
+    /**
+     * oracle数据类型映射
+     */
+    private static final List<String> ORACLE_DATA_TYPE = Lists.newArrayList("YEAR", "MONTH", "DAY", "HOUR",
+            "MINUTE", "SECOND", "TIMEZONE_HOUR", "TIMEZONE_MINUTE", "TIMEZONE_REGION", "TIMEZONE_ABBR", "DATE",
+            "TIMESTAMP", "TIMESTAMP WITH TIME ZONE", "TIMESTAMP WITH LOCAL TIME ZONE", "INTERVAL YEAR TO MONTH", "INTERVAL DAY TO SECOND");
+    private static final List<String> ORACLE_NUMBER_TYPE = Lists.newArrayList("NUMBER", "FLOAT", "BINARY_FLOAT", "BINARY_DOUBLE");
+
+
+
     @Override
     public DataVO executeSql(DatasourceEntity datasource, String sql) {
         DbDataVO dbDataVO = DBUtils.getSqlValue(sql, datasource);
+        DBUtils.unityDataType(dbDataVO.getData(), dbDataVO.getStructure(), ORACLE_NUMBER_TYPE, ORACLE_DATA_TYPE);
         return new DataVO(dbDataVO.getData(), dbDataVO.getStructure());
     }
 
@@ -90,6 +101,7 @@ public class OracleDatasourceServiceImpl extends ServiceImpl<DatasourceDao, Data
         page.setTotalCount(total);
         page.setTotalPage((total + size - 1) / size);
         page.setList(pageData.getData());
+        DBUtils.unityDataType(pageData.getData(), pageData.getStructure(), ORACLE_NUMBER_TYPE, ORACLE_DATA_TYPE);
         return new DataVO(page, pageData.getStructure());
     }
 
@@ -100,6 +112,7 @@ public class OracleDatasourceServiceImpl extends ServiceImpl<DatasourceDao, Data
             procedure = "{" + procedure + "}";
         }
         DbDataVO call = DBUtils.call(procedure, datasource, current, size);
+        DBUtils.unityDataType(call.getData(), call.getStructure(), ORACLE_NUMBER_TYPE, ORACLE_DATA_TYPE);
         boolean pageFlag = current != null && size != null;
         if (pageFlag) {
             return new DataVO(call.getPageData(), call.getStructure());

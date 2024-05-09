@@ -174,8 +174,9 @@ public class LabelServiceImpl extends ServiceImpl<LabelDao, LabelEntity> impleme
     public List<String> getLabelType() {
         LambdaQueryWrapper<LabelEntity> wrapper = new LambdaQueryWrapper<>();
         wrapper.select(LabelEntity::getLabelType);
+        wrapper.isNotNull(LabelEntity::getLabelType);
         wrapper.groupBy(LabelEntity::getLabelType);
-        return this.list(wrapper).stream().map(LabelEntity::getLabelType).collect(Collectors.toList());
+        return this.list(wrapper).stream().map(LabelEntity::getLabelType).filter(StringUtils::isNotBlank).collect(Collectors.toList());
     }
 
 

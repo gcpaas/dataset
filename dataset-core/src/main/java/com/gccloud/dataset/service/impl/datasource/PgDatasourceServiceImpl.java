@@ -49,9 +49,18 @@ import java.util.Map;
 @Service(DatasetConstant.DatasourceType.POSTGRESQL)
 public class PgDatasourceServiceImpl extends ServiceImpl<DatasourceDao, DatasourceEntity> implements IBaseDatasourceService {
 
+    /**
+     * pg数据类型映射
+     */
+    private static final List<String> PG_TYPE_NUMBER = Lists.newArrayList("SMALLINT", "INTEGER", "BIGINT",
+            "DECIMAL", "NUMERIC", "REAL", "DOUBLE PRECISION", "SMALLSERIAL", "SERIAL", "BIGSERIAL", "MONEY");
+    private static final List<String> PG_TYPE_DATE = Lists.newArrayList("TIMESTAMP", "DATE", "TIME");
+
+
     @Override
     public DataVO executeSql(DatasourceEntity datasource, String sql) {
         DbDataVO dbDataVO = DBUtils.getSqlValue(sql, datasource);
+        DBUtils.unityDataType(dbDataVO.getData(), dbDataVO.getStructure(), PG_TYPE_NUMBER, PG_TYPE_DATE);
         return new DataVO(dbDataVO.getData(), dbDataVO.getStructure());
     }
 
@@ -85,6 +94,7 @@ public class PgDatasourceServiceImpl extends ServiceImpl<DatasourceDao, Datasour
         page.setTotalCount(total);
         page.setTotalPage((total + size - 1) / size);
         page.setList(pageData.getData());
+        DBUtils.unityDataType(pageData.getData(), pageData.getStructure(), PG_TYPE_NUMBER, PG_TYPE_DATE);
         return new DataVO(page, pageData.getStructure());
     }
 
@@ -95,6 +105,7 @@ public class PgDatasourceServiceImpl extends ServiceImpl<DatasourceDao, Datasour
             procedure = "{" + procedure + "}";
         }
         DbDataVO call = DBUtils.call(procedure, datasource, current, size);
+        DBUtils.unityDataType(call.getData(), call.getStructure(), PG_TYPE_NUMBER, PG_TYPE_DATE);
         boolean pageFlag = current != null && size != null;
         if (pageFlag) {
             return new DataVO(call.getPageData(), call.getStructure());

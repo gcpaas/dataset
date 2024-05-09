@@ -48,12 +48,21 @@ import java.util.Map;
 @Service(DatasetConstant.DatasourceType.CLICKHOUSE)
 public class ClickhouseDatasourceServiceImpl extends ServiceImpl<DatasourceDao, DatasourceEntity> implements IBaseDatasourceService {
 
+    /**
+     * clickhouse数据类型映射
+     */
+    private static final List<String> CLICKHOUSE_NUMBER_TYPE = Lists.newArrayList("INT8", "INT16", "INT32",
+            "INT64", "UINT8", "UINT16", "UINT32", "UINT64", "FLOAT32", "FLOAT64");
+    private static final List<String> CLICKHOUSE_DATE_TYPE = Lists.newArrayList("DATE", "DATETIME");
+
+
     @Override
     public DataVO executeSql(DatasourceEntity datasource, String sql) {
         DbDataVO dbDataVO = DBUtils.getSqlValue(sql, datasource);
         DataVO dataVO = new DataVO();
         dataVO.setData(dbDataVO.getData());
         dataVO.setStructure(dbDataVO.getStructure());
+        DBUtils.unityDataType(dbDataVO.getData(), dbDataVO.getStructure(), CLICKHOUSE_NUMBER_TYPE, CLICKHOUSE_DATE_TYPE);
         return dataVO;
     }
 
@@ -89,6 +98,7 @@ public class ClickhouseDatasourceServiceImpl extends ServiceImpl<DatasourceDao, 
         DataVO dataVO = new DataVO();
         dataVO.setData(page);
         dataVO.setStructure(pageData.getStructure());
+        DBUtils.unityDataType(pageData.getData(), pageData.getStructure(), CLICKHOUSE_NUMBER_TYPE, CLICKHOUSE_DATE_TYPE);
         return dataVO;
     }
 

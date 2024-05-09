@@ -293,4 +293,31 @@ public interface DatasetConstant {
 
     }
 
+
+    /**
+     * 数据类型
+     */
+    interface DataType {
+        /**
+         * 文本
+         */
+        String TEXT = "text";
+
+        /**
+         * 数字
+         */
+        String NUMBER = "number";
+
+        /**
+         * 日期
+         */
+        String DATE = "date";
+
+        /**
+         * 布尔
+         */
+        String BOOLEAN = "boolean";
+
+    }
+
 }

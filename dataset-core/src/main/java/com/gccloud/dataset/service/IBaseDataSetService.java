@@ -33,9 +33,13 @@ import com.gccloud.dataset.vo.DeleteCheckVO;
 import com.github.benmanes.caffeine.cache.AsyncCache;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -47,6 +51,8 @@ import java.util.concurrent.TimeUnit;
  * @date 2023/6/1 10:56
  */
 public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
+
+    Logger log = LoggerFactory.getLogger(IBaseDataSetService.class);
 
     /**
      * 数据集结果缓存
@@ -65,6 +71,7 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
 
     /**
      * 列表查询
+     *
      * @param searchDTO
      * @return
      */
@@ -74,6 +81,7 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
 
     /**
      * 分页查询
+     *
      * @param searchDTO
      * @return
      */
@@ -83,6 +91,7 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
 
     /**
      * 数据集查询的条件组装
+     *
      * @param searchDTO
      * @return
      */
@@ -101,6 +110,7 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
 
     /**
      * 新增
+     *
      * @param entity
      * @return
      */
@@ -116,6 +126,7 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
 
     /**
      * 修改
+     *
      * @param entity
      * @return
      */
@@ -129,6 +140,7 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
 
     /**
      * 删除
+     *
      * @param id
      * @return
      */
@@ -143,6 +155,7 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
     /**
      * 删除前检查
      * 检查是否被引用
+     *
      * @param id
      * @return
      */
@@ -153,6 +166,7 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
 
     /**
      * 名称重复校验
+     *
      * @param id
      * @param name
      * @return
@@ -169,6 +183,7 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
     /**
      * 根据id查询数据集详情
      * 使用缓存减少数据库查询
+     *
      * @param id
      * @return
      */
@@ -196,6 +211,7 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
     /**
      * 根据id查询数据集详情
      * 使用缓存减少数据库查询
+     *
      * @param id
      * @return
      */
@@ -206,7 +222,8 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
         });
         try {
             return future.get();
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            log.error(ExceptionUtils.getStackTrace(e));
         }
         DatasetEntity entity = this.getById(id);
         DATASET_ENTITY_CACHE.put(id, CompletableFuture.completedFuture(entity));
@@ -215,6 +232,7 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
 
     /**
      * 根据code查询数据集详情
+     *
      * @param code
      * @return
      */
@@ -233,6 +251,7 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
 
     /**
      * 检查是否需要由后端执行
+     *
      * @param datasetId
      * @return
      */
@@ -243,6 +262,7 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
 
     /**
      * 获取分页数据（数据集执行）
+     *
      * @param id
      * @param params
      * @param current
@@ -256,6 +276,7 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
 
     /**
      * 获取数据（数据集执行）
+     *
      * @param datasetId
      * @param params
      * @return
@@ -266,6 +287,7 @@ public interface IBaseDataSetService extends ISuperService<DatasetEntity> {
     /**
      * 数据集执行测试
      * 在数据集新增、更新前需要先通过测试，确保数据集可用
+     *
      * @param executeDTO
      * @return
      */

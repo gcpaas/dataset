@@ -26,8 +26,10 @@ import com.gccloud.dataset.utils.DBUtils;
 import com.gccloud.dataset.vo.*;
 import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -41,9 +43,18 @@ import java.util.Map;
 @Service(DatasetConstant.DatasourceType.MYSQL)
 public class MysqlDatasourceServiceImpl extends ServiceImpl<DatasourceDao, DatasourceEntity> implements IBaseDatasourceService {
 
+    /**
+     * mysql数据类型映射
+     */
+    private static final List<String> MYSQL_TYPE_NUMBER = Lists.newArrayList("TINYINT", "SMALLINT", "MEDIUMINT", "INT", "BIGINT", "FLOAT", "DOUBLE", "DECIMAL");
+    private static final List<String> MYSQL_TYPE_DATE = Lists.newArrayList("DATE", "TIME", "YEAR", "DATETIME", "TIMESTAMP");
+
+
+
     @Override
     public DataVO executeSql(DatasourceEntity datasource, String sql) {
         DbDataVO dbDataVO = DBUtils.getSqlValue(sql, datasource);
+        DBUtils.unityDataType(dbDataVO.getData(), dbDataVO.getStructure(), MYSQL_TYPE_NUMBER, MYSQL_TYPE_DATE);
         return new DataVO(dbDataVO.getData(), dbDataVO.getStructure());
     }
 
@@ -76,6 +87,7 @@ public class MysqlDatasourceServiceImpl extends ServiceImpl<DatasourceDao, Datas
         page.setTotalCount(total);
         page.setTotalPage((total + size - 1) / size);
         page.setList(pageData.getData());
+        DBUtils.unityDataType(pageData.getData(), pageData.getStructure(), MYSQL_TYPE_NUMBER, MYSQL_TYPE_DATE);
         return new DataVO(page, pageData.getStructure());
     }
 
@@ -88,6 +100,7 @@ public class MysqlDatasourceServiceImpl extends ServiceImpl<DatasourceDao, Datas
             procedure = "{" + procedure + "}";
         }
         DbDataVO dbDataVO = DBUtils.call(procedure, datasource, current, size);
+        DBUtils.unityDataType(dbDataVO.getData(), dbDataVO.getStructure(), MYSQL_TYPE_NUMBER, MYSQL_TYPE_DATE);
         boolean pageFlag = current != null && size != null;
         if (pageFlag) {
             return new DataVO(dbDataVO.getPageData(), dbDataVO.getStructure());
