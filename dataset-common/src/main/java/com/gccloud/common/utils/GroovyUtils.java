@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 
 /**
@@ -115,22 +116,27 @@ public class GroovyUtils {
         config.addCompilationCustomizers(new ASTTransformationCustomizer(timeoutArgs, TimedInterrupt.class));
         // 沙盒环境
         config.addCompilationCustomizers(new SandboxTransformer());
-        // 注册至当前线程
-        new NoSystemExitSandbox().register();
-        new NoRunTimeSandbox().register();
-        new NoFileSandbox().register();
-
+        // 注册拦截器前，检查是否已经有了对应的拦截器，如果没有，则创建并注册
+        List<GroovyInterceptor> interceptors = GroovyInterceptor.getApplicableInterceptors();
+        Map<Class<? extends GroovyInterceptor>, Supplier<GroovyInterceptor>> interceptorMap = new HashMap<>();
+        interceptorMap.put(NoSystemExitSandbox.class, NoSystemExitSandbox::new);
+        interceptorMap.put(NoRunTimeSandbox.class, NoRunTimeSandbox::new);
+        interceptorMap.put(NoFileSandbox.class, NoFileSandbox::new);
+        // 遍历Map，检查是否已经有了对应的拦截器，如果没有，则创建并注册
+        interceptorMap.forEach((clazz, supplier) -> {
+            boolean hasInterceptor = interceptors.stream().anyMatch(interceptor -> interceptor.getClass().equals(clazz));
+            if (!hasInterceptor) {
+                supplier.get().register();
+            }
+        });
         ClassLoader parent = GroovyUtils.class.getClassLoader();
         GroovyClassLoader loader = new GroovyClassLoader(parent,config);
-
         Class groovyClass = loader.parseClass(groovyScript);
-
         try {
             loader.close();
         } catch (IOException var5) {
             var5.printStackTrace();
         }
-
         return groovyClass;
     }
 
@@ -175,7 +181,7 @@ public class GroovyUtils {
         }
     }
 
-    
+
 
 
 }
