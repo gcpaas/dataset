@@ -5,7 +5,7 @@
     <parent>
         <artifactId>dataset</artifactId>
         <groupId>com.gccloud</groupId>
-        <version>3.0.0.2024050901.Alpha</version>
+        <version>3.0.0.2024051701</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
