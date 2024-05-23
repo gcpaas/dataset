@@ -441,10 +441,10 @@ public class DBUtils {
      */
     public static List<String> getTableNames (String sql, String datasourceType) {
         DbType jdbcType = translateDbType(datasourceType);
-        if (jdbcType == null) {
-            return null;
-        }
         List<String> tableNames = new ArrayList<>();
+        if (jdbcType == null) {
+            return tableNames;
+        }
         try {
             List<SQLStatement> stmts = SQLUtils.parseStatements(sql, jdbcType);
             String database = "";
