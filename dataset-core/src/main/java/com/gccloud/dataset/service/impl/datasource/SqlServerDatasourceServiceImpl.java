@@ -47,12 +47,12 @@ public class SqlServerDatasourceServiceImpl extends ServiceImpl<DatasourceDao, D
         int start = (current - 1) * size;
         List<String> columns = DBUtils.getColumns(sql, datasource.getSourceType());
         String columnStr;
-        if (columns == null || columns.size() == 0 || columns.contains("*")) {
+        if (columns == null || columns.isEmpty() || columns.contains("*")) {
             columnStr = "*";
         } else {
             columnStr = String.join(",", columns);
         }
-        String pageSql = "select " + columnStr + " from (" + sql + ") as t order by 1 offset "+ start +" rows fetch next " + 10 + " rows only";
+        String pageSql = "select " + columnStr + " from (" + sql + ") as t order by 1 offset "+ start +" rows fetch next " + size + " rows only";
         log.info("数据集数据详情分页 sql语句：{}", pageSql);
         DbDataVO pageData = DBUtils.getSqlValue(pageSql, datasource);
         PageVO<Map<String, Object>> page = new PageVO<>();
