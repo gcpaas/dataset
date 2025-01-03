@@ -676,6 +676,9 @@ public class DBUtils {
             case DatasetConstant.DatasourceType.CLICKHOUSE:
                 jdbcType = JdbcConstants.CLICKHOUSE;
                 break;
+            case DatasetConstant.DatasourceType.SQLSERVER:
+                jdbcType = JdbcConstants.SQL_SERVER;
+                break;
             default:
                 return null;
         }
