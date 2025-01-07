@@ -20,12 +20,8 @@ import org.codehaus.groovy.syntax.Types;
 import org.kohsuke.groovy.sandbox.GroovyInterceptor;
 import org.kohsuke.groovy.sandbox.SandboxTransformer;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -67,8 +63,10 @@ public class GroovyUtils {
             Object result = script.run();
             return result;
         } catch (Exception e) {
+            // 执行失败，说明脚本有安全问题或其他问题，从缓存中移除
+            CACHE_CLASS.invalidate(groovyScript);
             log.error(ExceptionUtils.getStackTrace(e));
-            throw new GlobalException("脚本执行失败", e);
+            throw new GlobalException("脚本执行失败：" + e.getMessage(), e);
         }
     }
 
@@ -92,6 +90,7 @@ public class GroovyUtils {
         });
         return clazz;
     }
+
 
     public static Class<?> buildClassSafe(String groovyScript) {
         // 自定义配置
@@ -119,9 +118,7 @@ public class GroovyUtils {
         // 注册拦截器前，检查是否已经有了对应的拦截器，如果没有，则创建并注册
         List<GroovyInterceptor> interceptors = GroovyInterceptor.getApplicableInterceptors();
         Map<Class<? extends GroovyInterceptor>, Supplier<GroovyInterceptor>> interceptorMap = new HashMap<>();
-        interceptorMap.put(NoSystemExitSandbox.class, NoSystemExitSandbox::new);
-        interceptorMap.put(NoRunTimeSandbox.class, NoRunTimeSandbox::new);
-        interceptorMap.put(NoFileSandbox.class, NoFileSandbox::new);
+        interceptorMap.put(GroovyNotSupportInterceptor.class, GroovyNotSupportInterceptor::new);
         // 遍历Map，检查是否已经有了对应的拦截器，如果没有，则创建并注册
         interceptorMap.forEach((clazz, supplier) -> {
             boolean hasInterceptor = interceptors.stream().anyMatch(interceptor -> interceptor.getClass().equals(clazz));
@@ -134,53 +131,92 @@ public class GroovyUtils {
         Class groovyClass = loader.parseClass(groovyScript);
         try {
             loader.close();
-        } catch (IOException var5) {
-            var5.printStackTrace();
+        } catch (IOException exception) {
+            exception.printStackTrace();
         }
         return groovyClass;
     }
 
+    /**
+     * 方法、类限制拦截器
+     */
+    static class GroovyNotSupportInterceptor extends GroovyInterceptor {
 
-    static class NoSystemExitSandbox extends GroovyInterceptor {
+        /**
+         * 默认方法黑名单
+         */
+        private final List<String> defaultMethodBlacklist = Arrays.asList("getClass", "class", "wait", "notify",
+                "notifyAll", "invokeMethod", "finalize", "execute");
+
+        /**
+         * 默认类黑名单，主要禁止文件操作
+         */
+        private final List<Class> defaultClassBlacklist = Arrays.asList(
+                java.io.File.class,
+                java.io.FileInputStream.class,
+                java.io.FileOutputStream.class,
+                java.io.FileReader.class,
+                java.io.FileWriter.class,
+                java.io.RandomAccessFile.class,
+                java.io.BufferedReader.class,
+                java.io.BufferedWriter.class,
+                java.net.URL.class,
+                java.nio.file.Files.class
+        );
+
+        /**
+         * 静态方法拦截
+         */
         @Override
-        public Object onStaticCall(Invoker invoker, Class receiver, String method, Object... args) throws Throwable {
-            if (receiver == System.class && method.equals("exit")) {
-                throw new SecurityException("No call on System.exit() please");
+        public Object onStaticCall(GroovyInterceptor.Invoker invoker, Class receiver, String method, Object... args)
+                throws Throwable {
+            if (receiver == System.class && "exit".equals(method)) {
+                // System.exit(0)
+                throw new GlobalException("由于安全限制，禁止使用方法: System.exit()");
             }
-            return super.onStaticCall(invoker, receiver, method, args);
-        }
-    }
-
-    static class NoRunTimeSandbox extends GroovyInterceptor {
-        @Override
-        public Object onStaticCall(Invoker invoker, Class receiver, String method, Object... args) throws Throwable {
             if (receiver == Runtime.class) {
-                throw new SecurityException("No call on RunTime please");
+                // 通过Java的Runtime.getRuntime().exec()方法执行shell, 操作服务器…
+                throw new GlobalException("由于安全限制，禁止使用方法: Runtime.getRuntime().exec()");
+            }
+            if (receiver == Class.class && "forName".equals(method)) {
+                // Class.forName
+                throw new GlobalException("由于安全限制，禁止使用方法: Class.forName()");
             }
             return super.onStaticCall(invoker, receiver, method, args);
         }
-    }
 
-    static class NoFileSandbox extends GroovyInterceptor {
+        /**
+         * 普通方法拦截
+         */
         @Override
-        public Object onStaticCall(Invoker invoker, Class receiver, String method, Object... args) throws Throwable {
-            if (receiver == File.class) {
-                throw new SecurityException("No call on File please");
+        public Object onMethodCall(GroovyInterceptor.Invoker invoker, Object receiver, String method, Object... args)
+                throws Throwable {
+            if (defaultClassBlacklist.contains(receiver.getClass())) {
+                // 类黑名单
+                throw new GlobalException("由于安全限制，禁止使用类: " + receiver.getClass().getName());
             }
-            return super.onStaticCall(invoker, receiver, method, args);
+            if (defaultMethodBlacklist.contains(method)) {
+                // 方法列表黑名单
+                throw new GlobalException("由于安全限制，禁止使用方法: " + method);
+            }
+            return super.onMethodCall(invoker, receiver, method, args);
         }
-    }
 
-    static class NoProcessSandbox extends GroovyInterceptor {
+        /**
+         * 实例化拦截
+         */
         @Override
-        public Object onStaticCall(Invoker invoker, Class receiver, String method, Object... args) throws Throwable {
-            if (receiver == Process.class) {
-                throw new SecurityException("No call on Process please");
+        public Object onNewInstance(Invoker invoker, Class receiver, Object... args) throws Throwable {
+            if (defaultClassBlacklist.contains(receiver)) {
+                // 类黑名单
+                throw new GlobalException("由于安全限制，禁止使用类: " + receiver.getName());
             }
-            return super.onStaticCall(invoker, receiver, method, args);
+            if (receiver.getName().startsWith("java.nio.file")) {
+                throw new GlobalException("由于安全限制，禁止使用类: " + receiver.getName());
+            }
+            return super.onNewInstance(invoker, receiver, args);
         }
     }
-
 
 
 
